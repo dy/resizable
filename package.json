@@ -1,6 +1,6 @@
 {
   "name": "resizable",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Resizable behaviour for DOM elements",
   "main": "index.js",
   "directories": {
