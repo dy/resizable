@@ -1,0 +1,30 @@
+{
+  "name": "resizable",
+  "version": "0.0.0",
+  "description": "Resizable behaviour for DOM elements",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dfcreative/resizable.git"
+  },
+  "keywords": [
+    "resizable",
+    "UI",
+    "draggable"
+  ],
+  "author": "deima",
+  "license": "UNLICENSE",
+  "bugs": {
+    "url": "https://github.com/dfcreative/resizable/issues"
+  },
+  "homepage": "https://github.com/dfcreative/resizable",
+  "devDependencies": {
+    "require-stub": "~1.x"
+  }
+}
