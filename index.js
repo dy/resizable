@@ -3,6 +3,8 @@ var state = require('st8');
 var Enot = require('enot');
 var css = require('mucss');
 var splitKeys = require('split-keys');
+var parse = require('muparse');
+var type = require('mutypes');
 
 
 /**
@@ -26,7 +28,7 @@ function Resizable(el, options){
 		//parse attribute, if no option passed
 		if (options[propName] === undefined){
 			prop = constr.options[propName];
-			options[propName] = parse.attribute(target, propName, prop.init !== undefined ? prop.init : prop);
+			options[propName] = parse.attribute(el, propName, prop && prop.init !== undefined ? prop.init : prop);
 		}
 
 		//declare initial value
@@ -133,42 +135,58 @@ Resizable.handleOptions = splitKeys({
 });
 
 /** handles styles */
+var w = 10;
 Resizable.handleStyles = splitKeys({
 	'e,w,n,s,nw,ne,sw,se':{
 		'position': 'absolute'
 	},
 	'e,w': {
 		'top, bottom':0,
-		'width':10,
-		'left, right': 'auto'
+		'width':w
+	},
+	'e': {
+		'left': 'auto',
+		'right': -w/2
+	},
+	'w': {
+		'right': 'auto',
+		'left': -w/2
+	},
+	's': {
+		'top': 'auto',
+		'bottom': -w/2
+	},
+	'n': {
+		'bottom': 'auto',
+		'top': -w/2
 	},
 	'n,s': {
-		'left, right': 0,
-		'top, bototm': 'auto',
-		'height': 10
+		'left, right': -w/2,
+		'height': w
 	},
 	'nw,ne,sw,se': {
-		'width': 10,
-		'height': 10
+		'width': w,
+		'height': w,
+		'z-index': 1
 	},
 	'nw': {
-		'top, left': 0,
+		'top, left': -w/2,
 		'bottom, right': 'auto'
 	},
 	'ne': {
-		'top, right': 0,
+		'top, right': -w/2,
 		'bottom, left': 'auto'
 	},
 	'sw': {
-		'bottom, left': 0,
+		'bottom, left': -w/2,
 		'top, right': 'auto'
 	},
 	'se': {
-		'bottom, right': 0,
+		'bottom, right': -w/2,
 		'top, left': 'auto'
 	}
-});
-
+}, true);
+console.log(Resizable.handleStyles.ne)
 
 /** Create handle for the direction */
 proto.configureHandle = function(handle, direction){
@@ -176,14 +194,14 @@ proto.configureHandle = function(handle, direction){
 	var styles = Resizable.handleStyles;
 
 	//make handle draggable
-	var draggy = new Draggy(handle, opts[direction]);
+	var draggy = new Draggable(handle, opts[direction]);
 
 	//append styles
 	css(handle, styles[direction]);
 	css(handle, 'cursor', direction + '-resize');
 
 	//append proper class
-	handle.className += ' ' + this.handleClass;
+	handle.classList.add(this.handleClass);
 
 	return handle;
 };

@@ -19,5 +19,16 @@
 </div>
 
 <script>
-	require('');
+	var Resizable = require('resizable');
+
+	//init resizables
+	var $resizables = document.querySelectorAll('.resizable');
+	for (var i = 0, l = $resizables.length, $resizable; i < l; i++){
+		$resizable = $resizables[i];
+		var dr = new Resizable($resizable, {
+
+		});
+		$resizable.parentNode.setAttribute('limit', dr.y);
+	}
+
 </script>

@@ -26,5 +26,10 @@
   "homepage": "https://github.com/dfcreative/resizable",
   "devDependencies": {
     "require-stub": "~1.x"
+  },
+  "dependencies": {
+    "draggy": "~0.x",
+    "split-keys": "*",
+    "mucss": "~0.x"
   }
 }
