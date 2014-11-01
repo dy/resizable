@@ -12,23 +12,32 @@
 		background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='5' height='5'><path fill='rgba(130, 135, 140 ,1)' d='M 0 0 L 1 0 0 1 0 0 z'/><path fill='rgba(130, 135, 140 ,1)' d='M 0 5 L 5 0 5 1 1 5 0 5 z'/></svg>");
 		border: 2px dashed rgba(120,125,130,1);
 	}
+	.resizable div{
+		background: rgba(10,20,30,.1);
+	}
+	body{
+		min-height: 100vh;
+	}
 </style>
 
-<div class="container">
-	<div class="resizable"></div>
-</div>
+
+<div class="resizable"></div>
+
 
 <script>
 	var Resizable = require('resizable');
+	var Draggy = require('draggy');
 
 	//init resizables
 	var $resizables = document.querySelectorAll('.resizable');
 	for (var i = 0, l = $resizables.length, $resizable; i < l; i++){
 		$resizable = $resizables[i];
-		var dr = new Resizable($resizable, {
+		var res = new Resizable($resizable, {
 
 		});
-		$resizable.parentNode.setAttribute('limit', dr.y);
+		var dr = new Draggy($resizable, {
+
+		});
 	}
 
 </script>

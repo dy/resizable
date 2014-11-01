@@ -7,6 +7,10 @@ var parse = require('muparse');
 var type = require('mutypes');
 
 
+/** Shortcuts */
+var doc = document, win = window, root = doc.documentElement;
+
+
 /**
  * Resizable class
  *
@@ -40,8 +44,12 @@ function Resizable(el, options){
 	//apply params
 	state(this, constr.options);
 
+	//save initial offsets
+	this.offsets = [this.element.offsetLeft, this.element.offsetTop];
+
 	//ensure position is absolute (the only dependable way of resizing)
 	this.element.style.position = 'absolute';
+
 }
 
 
@@ -122,27 +130,59 @@ var proto = Resizable.prototype;
 
 
 /** predefined handles draggable options */
+var w = 10;
 Resizable.handleOptions = splitKeys({
-	'n,w': {
-		axis: 'y',
+	'n,s': {
+		axis: 'y'
 	},
 	'w,e':{
 		axis: 'x'
 	},
 	'e,w,n,s,nw,ne,sw,se':{
-		sniper: false
+		sniper: false,
+		pin: w/2,
+		within: root
+	},
+	's,e,se': {
+		dragstart: function(e){
+			var res = this.resizable,
+				el = res.element;
+
+			//fix top-left position
+			css(el, {
+				top: res.offsets[0],
+				left: res.offsets[1]
+			});
+
+			//save initial size
+			res.size = [res.element.offsetWidth, res.element.offsetHeight];
+
+		},
+		drag: function(e){
+			var res = this.resizable,
+				el = res.element;
+
+
+			//change width & height to accord to the new position of handle
+			css(el, {
+				width: res.size[0] + this.x,
+				height: res.size[1] + this.y
+			});
+			this.x = 0;
+			this.y = 0;
+		}
 	}
-});
+}, true);
+console.log(Resizable.handleOptions.s)
 
 /** handles styles */
-var w = 10;
 Resizable.handleStyles = splitKeys({
 	'e,w,n,s,nw,ne,sw,se':{
 		'position': 'absolute'
 	},
 	'e,w': {
 		'top, bottom':0,
-		'width':w
+		'width': w
 	},
 	'e': {
 		'left': 'auto',
@@ -186,7 +226,6 @@ Resizable.handleStyles = splitKeys({
 		'top, left': 'auto'
 	}
 }, true);
-console.log(Resizable.handleStyles.ne)
 
 /** Create handle for the direction */
 proto.configureHandle = function(handle, direction){
@@ -195,6 +234,15 @@ proto.configureHandle = function(handle, direction){
 
 	//make handle draggable
 	var draggy = new Draggable(handle, opts[direction]);
+
+	//save resizable reference
+	draggy.resizable = this;
+
+	//prevent bubbling on handles
+	Enot.on(handle, 'drag, dragstart, dragend', function(e){
+		e.preventDefault();
+		e.stopPropagation();
+	});
 
 	//append styles
 	css(handle, styles[direction]);
