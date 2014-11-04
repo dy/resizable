@@ -4,25 +4,42 @@
 
 <style>
 	.container{
-
 	}
 	.resizable{
+		float: left;
 		width: 40px;
 		height: 40px;
 		background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='5' height='5'><path fill='rgba(130, 135, 140 ,1)' d='M 0 0 L 1 0 0 1 0 0 z'/><path fill='rgba(130, 135, 140 ,1)' d='M 0 5 L 5 0 5 1 1 5 0 5 z'/></svg>");
 		border: 2px dashed rgba(120,125,130,1);
+		padding: 10px;
+		margin: 10px;
 	}
 	.resizable div{
-		background: rgba(10,20,30,.1);
+		background: rgba(10,20,30,0);
+	}
+	.resizable:hover div{
+		background: rgba(10,20,30,0.1);
 	}
 	body{
-		min-height: 100vh;
+		position: relative;
+		min-height: 800px;
+		outline: 2px solid red;
+		/*min-height: 100vh;*/
+	}
+	.spacer{
+		width: 10%;
+		margin: 10px;
+		padding: 10px;
+		background: rgba(210, 255, 220, .5);
+		float: left;
 	}
 </style>
 
+<div class="spacer">Spacy content</div>
+<div class="resizable">Resize me</div>
+<div class="spacer">Spacy content</div>
 
-<div class="resizable"></div>
-
+<div class="resizable" style="position: absolute; top: 200px; left: 200px;">Resize me</div>
 
 <script>
 	var Resizable = require('resizable');
@@ -35,9 +52,7 @@
 		var res = new Resizable($resizable, {
 
 		});
-		var dr = new Draggy($resizable, {
-
-		});
+		var dr = new Draggy($resizable);
 	}
 
 </script>

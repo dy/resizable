@@ -1,10 +1,11 @@
+var css = require('mucss');
 var Draggable = require('draggy');
 var state = require('st8');
 var Enot = require('enot');
-var css = require('mucss');
 var splitKeys = require('split-keys');
 var parse = require('muparse');
 var type = require('mutypes');
+var softExtend = require('soft-extend');
 
 
 /** Shortcuts */
@@ -43,13 +44,6 @@ function Resizable(el, options){
 
 	//apply params
 	state(this, constr.options);
-
-	//save initial offsets
-	this.offsets = [this.element.offsetLeft, this.element.offsetTop];
-
-	//ensure position is absolute (the only dependable way of resizing)
-	this.element.style.position = 'absolute';
-
 }
 
 
@@ -86,18 +80,30 @@ Resizable.options = {
 			else if (type.isObject(val)) {
 				handles = val;
 			}
-			//default set of handles - all
+			//default set of handles depends on position.
 			else {
-				handles = {
-					s: null,
-					se: null,
-					e: null,
-					ne: null,
-					n: null,
-					nw: null,
-					w: null,
-					sw: null
-				};
+				var pos = getComputedStyle(this.element).position;
+				//if position is absolute - all
+				if (pos === 'absolute' || pos === 'fixed'){
+					handles = {
+						s: null,
+						se: null,
+						e: null,
+						ne: null,
+						n: null,
+						nw: null,
+						w: null,
+						sw: null
+					};
+				}
+				//else - only three
+				else {
+					handles = {
+						s: null,
+						se: null,
+						e: null
+					};
+				}
 			}
 
 			//create proper number of handles
@@ -141,39 +147,155 @@ Resizable.handleOptions = splitKeys({
 	'e,w,n,s,nw,ne,sw,se':{
 		sniper: false,
 		pin: w/2,
-		within: root
-	},
-	's,e,se': {
+		within: root,
+		threshold: 10,
 		dragstart: function(e){
 			var res = this.resizable,
 				el = res.element;
 
-			//fix top-left position
-			css(el, {
-				top: res.offsets[0],
-				left: res.offsets[1]
-			});
+			var margins = css.margins(el);
+
+			//save initial offsets
+			res.offsets = [el.offsetLeft - margins.left, el.offsetTop - margins.top];
+
+			//fix position
+			this.fix();
 
 			//save initial size
-			res.size = [res.element.offsetWidth, res.element.offsetHeight];
-
+			var b = css.borders(res.element);
+			var p = css.paddings(res.element);
+			res.size = [res.element.offsetWidth - b.left - b.right - p.left - p.right, res.element.offsetHeight - b.top - b.bottom - p.top - p.bottom];
 		},
 		drag: function(e){
 			var res = this.resizable,
 				el = res.element;
 
-
 			//change width & height to accord to the new position of handle
+			this.resize();
+
+			//FIXME: doubtful solution
+			this.x = 0;
+			this.y = 0;
+		}
+	},
+	's,e,se': {
+		resize: function(){
+			var res = this.resizable,
+				el = res.element;
+
 			css(el, {
 				width: res.size[0] + this.x,
 				height: res.size[1] + this.y
 			});
-			this.x = 0;
-			this.y = 0;
+		},
+
+		fix: function(){
+			var res = this.resizable,
+				el = res.element;
+
+			//fix top-left position
+			var margins = css.margins(el);
+			css(el, {
+				left: res.offsets[0],
+				top: res.offsets[1],
+				bottom: 'auto',
+				right: 'auto'
+			});
+		}
+	},
+	'n,nw,w': {
+		resize: function(){
+			var res = this.resizable,
+				el = res.element;
+
+			css(el, {
+				width: res.size[0] - this.x,
+				height: res.size[1] - this.y
+			});
+		},
+
+		fix: function(){
+			var res = this.resizable,
+				el = res.element;
+
+			var parentRect = css.offsets(el.offsetParent);
+			var selfRect = css.offsets(el);
+
+			//fix bottom-right position
+			var margins = css.margins(el);
+
+			css(el, {
+				right: parentRect.right - selfRect.right + el.draggy.x - margins.left,
+				bottom: parentRect.bottom - selfRect.bottom + el.draggy.y - margins.top,
+				top: 'auto',
+				left: 'auto'
+			});
+		}
+	},
+	'ne': {
+		resize: function(){
+			var res = this.resizable,
+				el = res.element;
+
+			css(el, {
+				width: res.size[0] + this.x,
+				height: res.size[1] - this.y
+			});
+		},
+		fix: function(){
+			var res = this.resizable,
+				el = res.element;
+
+			var res = this.resizable,
+				el = res.element;
+
+			var parentRect = css.offsets(el.offsetParent);
+			var selfRect = css.offsets(el);
+
+			//fix bottom-right position
+			var margins = css.margins(el);
+
+			css(el, {
+				bottom: parentRect.bottom - selfRect.bottom + el.draggy.y - margins.top,
+				left: res.offsets[0],
+				top: 'auto',
+				right: 'auto'
+			});
+		}
+	},
+	'sw': {
+		resize: function(){
+			var res = this.resizable,
+				el = res.element;
+
+			css(el, {
+				width: res.size[0] - this.x,
+				height: res.size[1] + this.y
+			});
+		},
+		fix: function(){
+			var res = this.resizable,
+				el = res.element;
+
+			var res = this.resizable,
+				el = res.element;
+
+			var parentRect = css.offsets(el.offsetParent);
+			var selfRect = css.offsets(el);
+
+			//fix bottom-right position
+			var margins = css.margins(el);
+
+			css(el, {
+				right: parentRect.right - selfRect.right + el.draggy.x - margins.left,
+				top: res.offsets[1],
+				bottom: 'auto',
+				left: 'auto'
+			});
 		}
 	}
 }, true);
-console.log(Resizable.handleOptions.s)
+
 
 /** handles styles */
 Resizable.handleStyles = splitKeys({
@@ -235,6 +357,9 @@ proto.configureHandle = function(handle, direction){
 	//make handle draggable
 	var draggy = new Draggable(handle, opts[direction]);
 
+	//append uninited options
+	softExtend(draggy, opts[direction]);
+
 	//save resizable reference
 	draggy.resizable = this;
 
@@ -259,6 +384,21 @@ proto.configureHandle = function(handle, direction){
 /** Make self eventable */
 Enot(proto);
 
+
+
+/** Helpers */
+function fixLeft(el){
+
+}
+function fixTop(el){
+
+}
+function fixBottom(el){
+
+}
+function fixRight(el){
+
+}
 
 
 
