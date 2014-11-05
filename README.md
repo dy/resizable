@@ -1,6 +1,6 @@
 # Resizable
 
-Makes any element resizable. Just as jQuery-UI resizable, but simplier and with no jQuery.
+Make any element resizable. Just as jQuery-UI, but simpler and without jQuery.
 
 
 ## Use
@@ -30,8 +30,8 @@ resizable.on('resize', function(){
 
 | Parameter | Default | Description |
 |---|:---:|---|
-| `within` | `this.parentNode` | Restrict resizing within the container  |
-| `handles` | `'e,w,n,s,nw,ne,sw,se'` | CSV/Array/Object of handles.  |
+| `within` | `parentNode` or `root` | Restrict resizing within the container  |
+| `handles` | `'e,w,n,s,nw,ne,sw,se'` or `'s,se,e'` | CSV/Array/Object of handles.  |
 
 
 ## Events
