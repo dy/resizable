@@ -178,13 +178,18 @@ Resizable.handleOptions = splitKeys({
 			//save initial offsets
 			res.offsets = [el.offsetLeft - margins.left, el.offsetTop - margins.top];
 
-			//fix position
-			this.fix();
+			//fix top-left position
+			css(el, {
+				left: res.offsets[0],
+				top: res.offsets[1],
+				// bottom: 'auto',
+				// right: 'auto'
+			});
 
 			//save initial size
-			var b = css.borders(el);
-			var p = css.paddings(el);
-			res.size = [el.offsetWidth - b.left - b.right - p.left - p.right, el.offsetHeight - b.top - b.bottom - p.top - p.bottom];
+			var b = res.b = css.borders(el);
+			var p = res.p = css.paddings(el);
+			res.size = [el.offsetWidth /*- b.left - b.right - p.left - p.right*/, el.offsetHeight /*- b.top - b.bottom - p.top - p.bottom*/];
 
 			//preset mouse cursor
 			//FIXME: test whether it is not very slow to change root’s style
@@ -201,8 +206,8 @@ Resizable.handleOptions = splitKeys({
 			this.resize();
 
 			//trigger callbacks
-			this.emit('resize', e);
-			Enot.emit(this.element, 'resize', e);
+			this.emit('resize');
+			Enot.emit(this.element, 'resize');
 
 			//FIXME: doubtful solution
 			this.x = 0;
@@ -222,95 +227,34 @@ Resizable.handleOptions = splitKeys({
 			});
 		}
 	},
-	's': {
+	'se,s,e': {
 		resize: function(){
 			var res = this.resizable,
 				el = res.element;
 
 			css(el, {
-				height: Math.min(res.size[1] + this.y)
-			});
-		},
-		fix: function(){
-			var res = this.resizable,
-				el = res.element;
-
-			//fix top-left position
-			css(el, {
-				top: res.offsets[1],
-				// bottom: 'auto'
+				width: Math.max(res.size[0] - res.b.left - res.b.right - res.p.left - res.p.right + this.x, 0),
+				height: Math.max(res.size[1] - res.b.top - res.b.bottom - res.p.top - res.p.bottom + this.y, 0)
 			});
 		}
 	},
-	'se': {
-		resize: function(){
+	'nw,n,w': {
+		resize: function(e){
 			var res = this.resizable,
 				el = res.element;
 
 			css(el, {
-				width: res.size[0] + this.x,
-				height: res.size[1] + this.y
+				width: Math.max(res.size[0] - res.b.left - res.b.right - res.p.left - res.p.right - this.x, 0),
+				height: Math.max(res.size[1] - res.b.top - res.b.bottom - res.p.top - res.p.bottom - this.y, 0)
 			});
-		},
-		fix: function(){
-			var res = this.resizable,
-				el = res.element;
 
-			//fix top-left position
-			css(el, {
-				left: res.offsets[0],
-				top: res.offsets[1],
-				// bottom: 'auto',
-				// right: 'auto'
-			});
-		}
-	},
-	'e': {
-		resize: function(){
-			var res = this.resizable,
-				el = res.element;
+			//subtract t/l on changed size
+			var difX = res.size[0] - el.offsetWidth;
+			var difY = res.size[1] - el.offsetHeight;
 
 			css(el, {
-				width: res.size[0] + this.x
-			});
-		},
-		fix: function(){
-			var res = this.resizable,
-				el = res.element;
-
-			//fix top-left position
-			css(el, {
-				left: res.offsets[0],
-				// right: 'auto'
-			});
-		}
-	},
-	'n,nw,w': {
-		resize: function(){
-			var res = this.resizable,
-				el = res.element;
-
-			css(el, {
-				width: res.size[0] - this.x,
-				height: res.size[1] - this.y
-			});
-		},
-
-		fix: function(){
-			var res = this.resizable,
-				el = res.element;
-
-			var parentRect = css.offsets(el.offsetParent);
-			var selfRect = css.offsets(el);
-
-			//fix bottom-right position
-			var margins = css.margins(el);
-
-			css(el, {
-				right: parentRect.right - selfRect.right + el.draggy.x - margins.left,
-				bottom: parentRect.bottom - selfRect.bottom + el.draggy.y - margins.top,
-				// top: 'auto',
-				// left: 'auto'
+				left: res.offsets[0] + difX,
+				top: res.offsets[1] + difY
 			});
 		}
 	},
@@ -320,28 +264,15 @@ Resizable.handleOptions = splitKeys({
 				el = res.element;
 
 			css(el, {
-				width: res.size[0] + this.x,
-				height: res.size[1] - this.y
+				width: Math.max(res.size[0] - res.b.left - res.b.right - res.p.left - res.p.right + this.x, 0),
+				height: Math.max(res.size[1] - res.b.top - res.b.bottom - res.p.top - res.p.bottom - this.y, 0)
 			});
-		},
-		fix: function(){
-			var res = this.resizable,
-				el = res.element;
 
-			var res = this.resizable,
-				el = res.element;
-
-			var parentRect = css.offsets(el.offsetParent);
-			var selfRect = css.offsets(el);
-
-			//fix bottom-right position
-			var margins = css.margins(el);
+			//subtract t/l on changed size
+			var difY = res.size[1] - el.offsetHeight;
 
 			css(el, {
-				bottom: parentRect.bottom - selfRect.bottom + el.draggy.y - margins.top,
-				left: res.offsets[0],
-				// top: 'auto',
-				// right: 'auto'
+				top: res.offsets[1] + difY
 			});
 		}
 	},
@@ -351,28 +282,15 @@ Resizable.handleOptions = splitKeys({
 				el = res.element;
 
 			css(el, {
-				width: res.size[0] - this.x,
-				height: res.size[1] + this.y
+				width: Math.max(res.size[0] - res.b.left - res.b.right - res.p.left - res.p.right - this.x, 0),
+				height: Math.max(res.size[1] - res.b.top - res.b.bottom - res.p.top - res.p.bottom + this.y, 0)
 			});
-		},
-		fix: function(){
-			var res = this.resizable,
-				el = res.element;
 
-			var res = this.resizable,
-				el = res.element;
-
-			var parentRect = css.offsets(el.offsetParent);
-			var selfRect = css.offsets(el);
-
-			//fix bottom-right position
-			var margins = css.margins(el);
+			//subtract t/l on changed size
+			var difX = res.size[0] - el.offsetWidth;
 
 			css(el, {
-				right: parentRect.right - selfRect.right + el.draggy.x - margins.left,
-				top: res.offsets[1],
-				// bottom: 'auto',
-				// left: 'auto'
+				left: res.offsets[0] + difX
 			});
 		}
 	}
