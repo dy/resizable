@@ -15,11 +15,9 @@ var Resizable = require('resizable');
 
 //make an element draggable
 var el = document.querySelector('.my-element');
+
 var resizable = new Resizable(el, {
 	//options
-	release: true,
-	sniper: false,
-	axis: 'x'
 });
 
 resizable.on('resize', function(){
@@ -32,16 +30,13 @@ resizable.on('resize', function(){
 
 | Parameter | Default | Description |
 |---|:---:|---|
-| `within` | `undefined` | Restrict resizing within the container  |
-| `handles` | `'e,w,n,s,nw,ne,sw,se'` | CSL/Array/Object of handles. Pass specific elements keyed by directions to make them handles.  |
+| `within` | `this.parentNode` | Restrict resizing within the container  |
+| `handles` | `'e,w,n,s,nw,ne,sw,se'` | CSV/Array/Object of handles.  |
 
 
 ## Events
 
 | Name | Description |
 |---|---|
-| `dragstart` | Drag start |
-| `drag` | Drag iteration |
-| `release` | User released drag |
-| `dragend` | Drag finished, called after release (stopped) |
+| `resize` | When element actual size has changed |
 

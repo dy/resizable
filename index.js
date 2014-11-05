@@ -191,7 +191,7 @@ Resizable.handleOptions = splitKeys({
 			res.p = css.paddings(el);
 			res.size = [el.offsetWidth, el.offsetHeight];
 
-			//save whether el is border-bo
+			//recalc border-box
 			if (getComputedStyle(el).boxSizing === 'border-box') {
 				res.p.top = 0;
 				res.p.bottom = 0;
