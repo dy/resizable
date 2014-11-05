@@ -61,14 +61,14 @@ Resizable.options = {
 			var res;
 			//defaultly restrictor is parent container
 			if (val === undefined) {
-				res = this.element.parentNode || null;
+				res = this.element.parentNode || root;
 			}
 			//unless null is separately stated
 			else if (val !== null) {
 				res = qel(val);
 			}
 
-			return res;
+			return res || root;
 		}
 	},
 
@@ -173,10 +173,12 @@ Resizable.handleOptions = splitKeys({
 			var res = this.resizable,
 				el = res.element;
 
-			var margins = css.margins(el);
+			res.m = css.margins(el);
+			res.b = css.borders(el);
+			res.p = css.paddings(el);
 
 			//save initial offsets
-			res.offsets = [el.offsetLeft - margins.left, el.offsetTop - margins.top];
+			res.offsets = [el.offsetLeft - res.m.left, el.offsetTop - res.m.top];
 
 			//fix top-left position
 			css(el, {
@@ -186,10 +188,6 @@ Resizable.handleOptions = splitKeys({
 				// right: 'auto'
 			});
 
-			//save initial size
-			res.b = css.borders(el);
-			res.p = css.paddings(el);
-			res.size = [el.offsetWidth, el.offsetHeight];
 
 			//recalc border-box
 			if (getComputedStyle(el).boxSizing === 'border-box') {
@@ -202,6 +200,14 @@ Resizable.handleOptions = splitKeys({
 				res.b.left = 0;
 				res.b.right = 0;
 			}
+
+			//save initial size
+			res.size = [el.offsetWidth - res.b.left - res.b.right - res.p.left - res.p.right, el.offsetHeight - res.b.top - res.b.bottom - res.p.top - res.p.bottom];
+
+			//calc limits
+			var po = css.offsets(res.within);
+			res.limit = [po.width - res.p.left - res.p.right - res.b.left - res.b.right - res.m.left - res.m.right, po.height - res.p.top - res.p.bottom - res.b.top - res.b.bottom - res.m.top - res.m.bottom];
+
 
 			//preset mouse cursor
 			//FIXME: test whether it is not very slow to change root’s style
@@ -245,8 +251,8 @@ Resizable.handleOptions = splitKeys({
 				el = res.element;
 
 			css(el, {
-				width: Math.max(res.size[0] - res.b.left - res.b.right - res.p.left - res.p.right + this.x, 0),
-				height: Math.max(res.size[1] - res.b.top - res.b.bottom - res.p.top - res.p.bottom + this.y, 0)
+				width: Math.min(Math.max(res.size[0] + this.x, 0), res.limit[0] - res.offsets[0]),
+				height: Math.min(Math.max(res.size[1] + this.y, 0), res.limit[1] - res.offsets[1])
 			});
 		}
 	},
@@ -256,13 +262,13 @@ Resizable.handleOptions = splitKeys({
 				el = res.element;
 
 			css(el, {
-				width: Math.max(res.size[0] - res.b.left - res.b.right - res.p.left - res.p.right - this.x, 0),
-				height: Math.max(res.size[1] - res.b.top - res.b.bottom - res.p.top - res.p.bottom - this.y, 0)
+				width: Math.min(Math.max(res.size[0] - this.x, 0), (res.size[0] + res.offsets[0])),
+				height: Math.min(Math.max(res.size[1] - this.y, 0), (res.size[1] + res.offsets[1]))
 			});
 
 			//subtract t/l on changed size
-			var difX = res.size[0] - el.offsetWidth;
-			var difY = res.size[1] - el.offsetHeight;
+			var difX = res.size[0] + res.b.left + res.b.right + res.p.left + res.p.right - el.offsetWidth;
+			var difY = res.size[1] + res.b.top + res.b.bottom + res.p.top + res.p.bottom - el.offsetHeight;
 
 			css(el, {
 				left: res.offsets[0] + difX,
@@ -276,12 +282,12 @@ Resizable.handleOptions = splitKeys({
 				el = res.element;
 
 			css(el, {
-				width: Math.max(res.size[0] - res.b.left - res.b.right - res.p.left - res.p.right + this.x, 0),
-				height: Math.max(res.size[1] - res.b.top - res.b.bottom - res.p.top - res.p.bottom - this.y, 0)
+				width: Math.min(Math.max(res.size[0] + this.x, 0), res.limit[0] - res.offsets[0]),
+				height: Math.min(Math.max(res.size[1] - this.y, 0), (res.size[1] + res.offsets[1]))
 			});
 
 			//subtract t/l on changed size
-			var difY = res.size[1] - el.offsetHeight;
+			var difY = res.size[1] + res.b.top + res.b.bottom + res.p.top + res.p.bottom - el.offsetHeight;
 
 			css(el, {
 				top: res.offsets[1] + difY
@@ -294,12 +300,12 @@ Resizable.handleOptions = splitKeys({
 				el = res.element;
 
 			css(el, {
-				width: Math.max(res.size[0] - res.b.left - res.b.right - res.p.left - res.p.right - this.x, 0),
-				height: Math.max(res.size[1] - res.b.top - res.b.bottom - res.p.top - res.p.bottom + this.y, 0)
+				width: Math.min(Math.max(res.size[0] - this.x, 0), res.size[0] + res.offsets[0]),
+				height: Math.min(Math.max(res.size[1] + this.y, 0), res.limit[1] - res.offsets[1])
 			});
 
 			//subtract t/l on changed size
-			var difX = res.size[0] - el.offsetWidth;
+			var difX = res.size[0] + res.b.left + res.b.right + res.p.left + res.p.right - el.offsetWidth;
 
 			css(el, {
 				left: res.offsets[0] + difX
