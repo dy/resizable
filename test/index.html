@@ -21,10 +21,9 @@
 		background: rgba(10,20,30,0.1);
 	}
 	body{
-		position: relative;
-		min-height: 800px;
+		/*position: relative;*/
 		outline: 2px solid red;
-		/*min-height: 100vh;*/
+		min-height: 500px;
 	}
 	.spacer{
 		width: 10%;
@@ -33,26 +32,68 @@
 		background: rgba(210, 255, 220, .5);
 		float: left;
 	}
+	.container{
+		background: rgba(200,200,200,.2);
+		width: 20%;
+		height: 200px;
+		line-height: 200px;
+		position: relative;
+		float: right;
+		padding: 20px;
+	}
+	.container .resizable{
+		line-height: 20px;
+	}
 </style>
 
 <div class="spacer">Spacy content</div>
-<div class="resizable">Resize me</div>
+<div class="resizable">Inline resize</div>
 <div class="spacer">Spacy content</div>
 
-<div class="resizable" style="position: absolute; top: 200px; left: 200px;">Resize me</div>
+<div class="resizable" style="position: absolute; top: 200px; left: 200px;">Absolute resize</div>
+
+<div class="resizable" style="position: absolute; top: 200px; left: 300px; min-width: 80px; max-width:120px; min-height: 80px; max-height: 120px;">Min/max size</div>
+
+
+<div class="container">
+	<div class="resizable" style="
+		position: absolute;
+		top:0;
+		left:0;
+		right:0;
+		min-height: 30px;
+		margin: 0;
+		width: auto;
+		height: auto;">Bound resize</div>
+	Some other content
+</div>
+
+
+<button id="turn-on" style="position: absolute; bottom: 20px; right: 20px;">Trigger resizables</button>
 
 <script>
 	var Resizable = require('resizable');
 	var Draggy = require('draggy');
 
 	//init resizables
-	var $resizables = document.querySelectorAll('.resizable');
-	for (var i = 0, l = $resizables.length, $resizable; i < l; i++){
-		$resizable = $resizables[i];
-		var res = new Resizable($resizable, {
-
-		});
-		var dr = new Draggy($resizable);
+	function trigger(){
+		var $resizables = document.querySelectorAll('.resizable');
+		for (var i = 0, l = $resizables.length, $resizable; i < l; i++){
+			$resizable = $resizables[i];
+			if (!$resizable.resizable) {
+				var res = new Resizable($resizable, {
+				});
+				var dr = new Draggy($resizable);
+			} else {
+				$resizable.resizable.destroy();
+				$resizable.draggy.destroy();
+			}
+		}
 	}
+
+	trigger();
+
+	//add trigger
+	document.querySelector('#turn-on').onclick = trigger;
 
 </script>

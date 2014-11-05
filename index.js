@@ -8,6 +8,9 @@ var type = require('mutypes');
 var softExtend = require('soft-extend');
 
 
+//TODO: no styles & predefined top/left/right case (resize one edge - as placer example case)
+//TODO: within resize
+
 /** Shortcuts */
 var doc = document, win = window, root = doc.documentElement;
 
@@ -61,7 +64,7 @@ Resizable.options = {
 	handles: {
 		init: function(val){
 			//set of handles
-			var handles;
+			var handles, style = getComputedStyle(this.element);
 
 			//parse value
 			if (type.isArray(val)){
@@ -82,7 +85,7 @@ Resizable.options = {
 			}
 			//default set of handles depends on position.
 			else {
-				var pos = getComputedStyle(this.element).position;
+				var pos = style.position;
 				//if position is absolute - all
 				if (pos === 'absolute' || pos === 'fixed'){
 					handles = {
@@ -104,7 +107,9 @@ Resizable.options = {
 						e: null
 					};
 				}
+
 			}
+
 
 			//create proper number of handles
 			var handle;
@@ -173,12 +178,36 @@ Resizable.handleOptions = splitKeys({
 			//change width & height to accord to the new position of handle
 			this.resize();
 
+			//trigger callbacks
+			this.emit('resize', e);
+			Enot.emit(this.element, 'resize', e);
+
 			//FIXME: doubtful solution
 			this.x = 0;
 			this.y = 0;
 		}
 	},
-	's,e,se': {
+	's': {
+		resize: function(){
+			var res = this.resizable,
+				el = res.element;
+
+			css(el, {
+				height: res.size[1] + this.y
+			});
+		},
+		fix: function(){
+			var res = this.resizable,
+				el = res.element;
+
+			//fix top-left position
+			css(el, {
+				top: res.offsets[1],
+				bottom: 'auto'
+			});
+		}
+	},
+	'se': {
 		resize: function(){
 			var res = this.resizable,
 				el = res.element;
@@ -188,17 +217,35 @@ Resizable.handleOptions = splitKeys({
 				height: res.size[1] + this.y
 			});
 		},
-
 		fix: function(){
 			var res = this.resizable,
 				el = res.element;
 
 			//fix top-left position
-			var margins = css.margins(el);
 			css(el, {
 				left: res.offsets[0],
 				top: res.offsets[1],
 				bottom: 'auto',
+				right: 'auto'
+			});
+		}
+	},
+	'e': {
+		resize: function(){
+			var res = this.resizable,
+				el = res.element;
+
+			css(el, {
+				width: res.size[0] + this.x
+			});
+		},
+		fix: function(){
+			var res = this.resizable,
+				el = res.element;
+
+			//fix top-left position
+			css(el, {
+				left: res.offsets[0],
 				right: 'auto'
 			});
 		}
@@ -349,6 +396,7 @@ Resizable.handleStyles = splitKeys({
 	}
 }, true);
 
+
 /** Create handle for the direction */
 proto.configureHandle = function(handle, direction){
 	var opts = Resizable.handleOptions;
@@ -380,25 +428,21 @@ proto.configureHandle = function(handle, direction){
 };
 
 
+/** deconstructor - removes any memory bindings */
+proto.destroy = function(){
+	//remove all handles
+	for (var hName in this.handles){
+		this.element.removeChild(this.handles[hName]);
+	}
+
+	//remove references
+	this.element.resizable = null;
+	this.element = null;
+};
+
 
 /** Make self eventable */
 Enot(proto);
-
-
-
-/** Helpers */
-function fixLeft(el){
-
-}
-function fixTop(el){
-
-}
-function fixBottom(el){
-
-}
-function fixRight(el){
-
-}
 
 
 
