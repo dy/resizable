@@ -187,9 +187,21 @@ Resizable.handleOptions = splitKeys({
 			});
 
 			//save initial size
-			var b = res.b = css.borders(el);
-			var p = res.p = css.paddings(el);
-			res.size = [el.offsetWidth /*- b.left - b.right - p.left - p.right*/, el.offsetHeight /*- b.top - b.bottom - p.top - p.bottom*/];
+			res.b = css.borders(el);
+			res.p = css.paddings(el);
+			res.size = [el.offsetWidth, el.offsetHeight];
+
+			//save whether el is border-bo
+			if (getComputedStyle(el).boxSizing === 'border-box') {
+				res.p.top = 0;
+				res.p.bottom = 0;
+				res.p.left = 0;
+				res.p.right = 0;
+				res.b.top = 0;
+				res.b.bottom = 0;
+				res.b.left = 0;
+				res.b.right = 0;
+			}
 
 			//preset mouse cursor
 			//FIXME: test whether it is not very slow to change root’s style

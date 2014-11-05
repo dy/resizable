@@ -10,7 +10,7 @@ You have to use [browserify](https://github.com/substack/node-browserify), [comp
 `$ npm install resizable`
 
 
-```
+```js
 var Resizable = require('resizable');
 
 //make an element draggable
