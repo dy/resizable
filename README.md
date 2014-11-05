@@ -13,9 +13,9 @@ You have to use [browserify](https://github.com/substack/node-browserify), [comp
 ```js
 var Resizable = require('resizable');
 
-//make an element draggable
 var el = document.querySelector('.my-element');
 
+//make an element resizable
 var resizable = new Resizable(el, {
 	//options
 });
