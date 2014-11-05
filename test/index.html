@@ -65,7 +65,7 @@
 		margin: 0;
 		width: auto;
 		height: auto;">Bound resize</div>
-	Some other content
+	Restricting container
 </div>
 
 
@@ -83,7 +83,9 @@
 			if (!$resizable.resizable) {
 				var res = new Resizable($resizable, {
 				});
-				var dr = new Draggy($resizable);
+				var dr = new Draggy($resizable,{
+					within: '..'
+				});
 			} else {
 				$resizable.resizable.destroy();
 				$resizable.draggy.destroy();

@@ -6,10 +6,11 @@ var splitKeys = require('split-keys');
 var parse = require('muparse');
 var type = require('mutypes');
 var softExtend = require('soft-extend');
+var qel = require('tiny-element');
 
 
 //TODO: no styles & predefined top/left/right case (resize one edge - as placer example case)
-//TODO: within resize
+//TODO: within container
 
 /** Shortcuts */
 var doc = document, win = window, root = doc.documentElement;
@@ -55,7 +56,21 @@ function Resizable(el, options){
  */
 Resizable.options = {
 	/** restrict resizing within the container */
-	within: undefined,
+	within: {
+		init: function(val){
+			var res;
+			//defaultly restrictor is parent container
+			if (val === undefined) {
+				res = this.element.parentNode || null;
+			}
+			//unless null is separately stated
+			else if (val !== null) {
+				res = qel(val);
+			}
+
+			return res;
+		}
+	},
 
 	/**
 	 * list/array/object of direction-keyed handles
@@ -152,7 +167,7 @@ Resizable.handleOptions = splitKeys({
 	'e,w,n,s,nw,ne,sw,se':{
 		sniper: false,
 		pin: w/2,
-		within: root,
+		within: null,
 		threshold: 10,
 		dragstart: function(e){
 			var res = this.resizable,
@@ -167,9 +182,16 @@ Resizable.handleOptions = splitKeys({
 			this.fix();
 
 			//save initial size
-			var b = css.borders(res.element);
-			var p = css.paddings(res.element);
-			res.size = [res.element.offsetWidth - b.left - b.right - p.left - p.right, res.element.offsetHeight - b.top - b.bottom - p.top - p.bottom];
+			var b = css.borders(el);
+			var p = css.paddings(el);
+			res.size = [el.offsetWidth - b.left - b.right - p.left - p.right, el.offsetHeight - b.top - b.bottom - p.top - p.bottom];
+
+			//preset mouse cursor
+			//FIXME: test whether it is not very slow to change root’s style
+			css(root, {
+				'cursor': this.element.style.cursor,
+				'pointer-events': 'none'
+			});
 		},
 		drag: function(e){
 			var res = this.resizable,
@@ -185,6 +207,19 @@ Resizable.handleOptions = splitKeys({
 			//FIXME: doubtful solution
 			this.x = 0;
 			this.y = 0;
+		},
+		dragend: function(){
+			var res = this.resizable,
+				el = res.element;
+
+			//undisable selection
+			css.enableSelection(root);
+
+			//clear cursor & pointer-events
+			css(root, {
+				'cursor': null,
+				'pointer-events': null
+			});
 		}
 	},
 	's': {
@@ -193,7 +228,7 @@ Resizable.handleOptions = splitKeys({
 				el = res.element;
 
 			css(el, {
-				height: res.size[1] + this.y
+				height: Math.min(res.size[1] + this.y)
 			});
 		},
 		fix: function(){
@@ -203,7 +238,7 @@ Resizable.handleOptions = splitKeys({
 			//fix top-left position
 			css(el, {
 				top: res.offsets[1],
-				bottom: 'auto'
+				// bottom: 'auto'
 			});
 		}
 	},
@@ -225,8 +260,8 @@ Resizable.handleOptions = splitKeys({
 			css(el, {
 				left: res.offsets[0],
 				top: res.offsets[1],
-				bottom: 'auto',
-				right: 'auto'
+				// bottom: 'auto',
+				// right: 'auto'
 			});
 		}
 	},
@@ -246,7 +281,7 @@ Resizable.handleOptions = splitKeys({
 			//fix top-left position
 			css(el, {
 				left: res.offsets[0],
-				right: 'auto'
+				// right: 'auto'
 			});
 		}
 	},
@@ -274,8 +309,8 @@ Resizable.handleOptions = splitKeys({
 			css(el, {
 				right: parentRect.right - selfRect.right + el.draggy.x - margins.left,
 				bottom: parentRect.bottom - selfRect.bottom + el.draggy.y - margins.top,
-				top: 'auto',
-				left: 'auto'
+				// top: 'auto',
+				// left: 'auto'
 			});
 		}
 	},
@@ -305,8 +340,8 @@ Resizable.handleOptions = splitKeys({
 			css(el, {
 				bottom: parentRect.bottom - selfRect.bottom + el.draggy.y - margins.top,
 				left: res.offsets[0],
-				top: 'auto',
-				right: 'auto'
+				// top: 'auto',
+				// right: 'auto'
 			});
 		}
 	},
@@ -336,8 +371,8 @@ Resizable.handleOptions = splitKeys({
 			css(el, {
 				right: parentRect.right - selfRect.right + el.draggy.x - margins.left,
 				top: res.offsets[1],
-				bottom: 'auto',
-				left: 'auto'
+				// bottom: 'auto',
+				// left: 'auto'
 			});
 		}
 	}
@@ -410,12 +445,6 @@ proto.configureHandle = function(handle, direction){
 
 	//save resizable reference
 	draggy.resizable = this;
-
-	//prevent bubbling on handles
-	Enot.on(handle, 'drag, dragstart, dragend', function(e){
-		e.preventDefault();
-		e.stopPropagation();
-	});
 
 	//append styles
 	css(handle, styles[direction]);
