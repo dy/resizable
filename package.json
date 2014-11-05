@@ -29,8 +29,13 @@
   },
   "dependencies": {
     "draggy": "~0.x",
-    "split-keys": "*",
-    "mucss": "~0.x",
-    "tiny-element": "~1.1.0"
+    "split-keys": "0.0.4",
+    "mucss": "*",
+    "tiny-element": "~1.x",
+    "st8": "*",
+    "enot": "*",
+    "mutypes": "*",
+    "soft-extend": "*",
+    "muparse": "*"
   }
 }
