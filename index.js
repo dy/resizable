@@ -9,8 +9,8 @@ var softExtend = require('soft-extend');
 var qel = require('tiny-element');
 
 
-//TODO: no styles & predefined top/left/right case (resize one edge - as placer example case)
-//TODO: within container
+//FIXME: test whether it is not very slow to change root’s style
+//FIXME: think up a better way of hiding the cursor, not the disabling the pointer events (it causes :hover classes turn off)
 
 /** Shortcuts */
 var doc = document, win = window, root = doc.documentElement;
@@ -61,14 +61,14 @@ Resizable.options = {
 			var res;
 			//defaultly restrictor is parent container
 			if (val === undefined) {
-				res = this.element.parentNode || root;
+				res = this.element.parentNode;
 			}
 			//unless null is separately stated
 			else if (val !== null) {
 				res = qel(val);
 			}
 
-			return res || root;
+			return res;
 		}
 	},
 
@@ -178,7 +178,11 @@ Resizable.handleOptions = splitKeys({
 			res.p = css.paddings(el);
 
 			//save initial offsets
+			elo = css.offsets(el);
+			// res.offsets = [elo.left, elo.top];
+			//correct offsets on static body
 			res.offsets = [el.offsetLeft - res.m.left, el.offsetTop - res.m.top];
+
 
 			//fix top-left position
 			css(el, {
@@ -187,7 +191,6 @@ Resizable.handleOptions = splitKeys({
 				// bottom: 'auto',
 				// right: 'auto'
 			});
-
 
 			//recalc border-box
 			if (getComputedStyle(el).boxSizing === 'border-box') {
@@ -204,13 +207,16 @@ Resizable.handleOptions = splitKeys({
 			//save initial size
 			res.size = [el.offsetWidth - res.b.left - res.b.right - res.p.left - res.p.right, el.offsetHeight - res.b.top - res.b.bottom - res.p.top - res.p.bottom];
 
-			//calc limits
-			var po = css.offsets(res.within);
-			res.limit = [po.width - res.p.left - res.p.right - res.b.left - res.b.right - res.m.left - res.m.right, po.height - res.p.top - res.p.bottom - res.b.top - res.b.bottom - res.m.top - res.m.bottom];
+			//calc limits (max height/width)
+			if (res.within) {
+				var po = css.offsets(res.within);
+				res.limit = [po.width - res.p.left - res.p.right - res.b.left - res.b.right - res.m.left - res.m.right, po.height - res.p.top - res.p.bottom - res.b.top - res.b.bottom - res.m.top - res.m.bottom];
+			} else {
+				res.limit = [Infinity, Infinity];
+			}
 
 
 			//preset mouse cursor
-			//FIXME: test whether it is not very slow to change root’s style
 			css(root, {
 				'cursor': this.element.style.cursor,
 				'pointer-events': 'none'

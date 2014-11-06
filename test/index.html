@@ -72,6 +72,10 @@
 	Restricting container
 </div>
 
+<!-- <div style="position: relative; top: 600px;"> -->
+	<div class="resizable" style="position: absolute; top:600px">Outside</div>
+<!-- </div> -->
+
 
 <button id="turn-on" style="position: absolute; bottom: 20px; right: 20px;">Trigger resizables</button>
 
@@ -86,9 +90,10 @@
 			$resizable = $resizables[i];
 			if (!$resizable.resizable) {
 				var res = new Resizable($resizable, {
+					// within: null
 				});
 				var dr = new Draggy($resizable,{
-					within: '..'
+					within: null//'..'
 				});
 			} else {
 				$resizable.resizable.destroy();
