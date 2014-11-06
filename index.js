@@ -148,7 +148,10 @@ Resizable.options = {
 	},
 
 	/** proper class to append to handle */
-	handleClass: 'handle'
+	handleClass: 'handle',
+
+	/** callbacks */
+	resize: undefined
 };
 
 
@@ -230,8 +233,8 @@ Resizable.handleOptions = splitKeys({
 			this.resize();
 
 			//trigger callbacks
-			this.emit('resize');
-			Enot.emit(this.element, 'resize');
+			res.emit('resize', e);
+			Enot.emit(el, 'resize', e);
 
 			//FIXME: doubtful solution
 			this.x = 0;

@@ -26,7 +26,7 @@
 	body{
 		/*position: relative;*/
 		outline: 2px solid red;
-		min-height: 500px;
+		min-height: 500px;←
 	}
 	.spacer{
 		width: 10%;
@@ -90,7 +90,10 @@
 			$resizable = $resizables[i];
 			if (!$resizable.resizable) {
 				var res = new Resizable($resizable, {
-					// within: null
+					within: null,
+					resize: function(){
+						// console.log('resize')
+					}
 				});
 				var dr = new Draggy($resizable,{
 					within: null//'..'
