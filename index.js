@@ -9,9 +9,6 @@ var softExtend = require('soft-extend');
 var qel = require('tiny-element');
 
 
-//FIXME: test whether it is not very slow to change root’s style
-//FIXME: think up a better way of hiding the cursor, not the disabling the pointer events (it causes :hover classes turn off)
-
 /** Shortcuts */
 var doc = document, win = window, root = doc.documentElement;
 
@@ -171,7 +168,7 @@ Resizable.handleOptions = splitKeys({
 		sniper: false,
 		pin: w/2,
 		within: null,
-		threshold: 10,
+		threshold: w/2,
 		dragstart: function(e){
 			var res = this.resizable,
 				el = res.element;
@@ -221,9 +218,12 @@ Resizable.handleOptions = splitKeys({
 
 			//preset mouse cursor
 			css(root, {
-				'cursor': this.element.style.cursor,
-				'pointer-events': 'none'
+				'cursor': this.direction + '-resize'
 			});
+			//clear cursors
+			for (var h in res.handles){
+				css(res.handles[h], 'cursor', null);
+			}
 		},
 		drag: function(e){
 			var res = this.resizable,
@@ -249,9 +249,12 @@ Resizable.handleOptions = splitKeys({
 
 			//clear cursor & pointer-events
 			css(root, {
-				'cursor': null,
-				'pointer-events': null
+				'cursor': null
 			});
+			//get back cursors
+			for (var h in res.handles){
+				css(res.handles[h], 'cursor', res.handles[h].draggy.direction + '-resize');
+			}
 		}
 	},
 	'se,s,e': {
@@ -330,7 +333,7 @@ Resizable.handleStyles = splitKeys({
 		'position': 'absolute'
 	},
 	'e,w': {
-		'top, bottom':0,
+		'top, bottom':w/2,
 		'width': w
 	},
 	'e': {
@@ -350,7 +353,7 @@ Resizable.handleStyles = splitKeys({
 		'top': -w/2
 	},
 	'n,s': {
-		'left, right': -w/2,
+		'left, right': w/2,
 		'height': w
 	},
 	'nw,ne,sw,se': {
@@ -384,6 +387,9 @@ proto.configureHandle = function(handle, direction){
 
 	//make handle draggable
 	var draggy = new Draggable(handle, opts[direction]);
+
+	//save direction
+	draggy.direction = direction;
 
 	//append uninited options
 	softExtend(draggy, opts[direction]);
