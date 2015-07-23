@@ -1,13 +1,13 @@
 {
   "name": "resizable",
-  "version": "0.1.2",
-  "description": "Resizable behaviour for DOM elements",
+  "version": "1.0.0",
+  "description": "Resizable behaviour for elements",
   "main": "index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "watch": "watchify -r ./index.js:resizable -r draggy -r queried -r domify -d -o test/bundle.js"
   },
   "repository": {
     "type": "git",
@@ -18,24 +18,25 @@
     "UI",
     "draggable"
   ],
-  "author": "deima",
-  "license": "UNLICENSE",
+  "author": "Deema Ywanov <dfcreative@gmail.com>",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/dfcreative/resizable/issues"
   },
   "homepage": "https://github.com/dfcreative/resizable",
   "devDependencies": {
-    "require-stub": "~1.x"
+    "watchify": "^3.3.0",
+    "mocha": "^2.2.5"
   },
   "dependencies": {
-    "draggy": "~0.x",
-    "split-keys": "0.0.4",
-    "mucss": "*",
-    "tiny-element": "~1.x",
-    "st8": "*",
-    "enot": "*",
-    "mutypes": "*",
-    "soft-extend": "*",
-    "muparse": "*"
+    "domify": "^1.3.3",
+    "draggy": "^1.3.1",
+    "emmy": "^5.3.2",
+    "inherits": "^2.0.1",
+    "mucss": "^1.0.2",
+    "mumath": "^1.0.2",
+    "mutype": "^0.3.9",
+    "queried": "^1.4.4",
+    "split-keys": "0.0.7"
   }
 }
