@@ -1,5 +1,6 @@
 var Draggable = require('draggy');
 var emit = require('emmy/emit');
+var on = require('emmy/on');
 var isArray = require('mutype/is-array');
 var isString = require('mutype/is-string');
 var isObject = require('mutype/is-object');
@@ -15,6 +16,7 @@ var borders = require('mucss/border');
 var margins = require('mucss/margin');
 var offsets = require('mucss/offset');
 var parseCSSValue = require('mucss/parse-value');
+
 
 var doc = document, win = window, root = doc.documentElement;
 
@@ -139,7 +141,7 @@ proto.createHandle = function(handle, direction){
 		axis: /^[ns]$/.test(direction) ? 'y' : /^[we]$/.test(direction) ? 'x' : 'both'
 	});
 
-	draggy.on('dragstart', function(e){
+	draggy.on('dragstart', function (e) {
 		self.m = margins(el);
 		self.b = borders(el);
 		self.p = paddings(el);
@@ -179,13 +181,13 @@ proto.createHandle = function(handle, direction){
 				po.right - o.right + self.size[0],
 				po.bottom - o.bottom + self.size[1]];
 		} else {
-			self.limits = [-9999, -9999, 9999, 9999];
+			self.limits = [9999, 9999, 9999, 9999];
 		}
 
 
 		//preset mouse cursor
 		css(root, {
-			'cursor': self.direction + '-resize'
+			'cursor': direction + '-resize'
 		});
 
 		//clear cursors
@@ -215,7 +217,7 @@ proto.createHandle = function(handle, direction){
 					height: between(self.size[1] - coords[1], 0, self.limits[1])
 				});
 
-				//subtract t/l on changed size
+				// //subtract t/l on changed size
 				var difX = self.size[0] + self.b.left + self.b.right + self.p.left + self.p.right - el.offsetWidth;
 				var difY = self.size[1] + self.b.top + self.b.bottom + self.p.top + self.p.bottom - el.offsetHeight;
 
