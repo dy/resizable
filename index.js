@@ -41,6 +41,11 @@ function Resizable (el, options) {
 	extend(self, options);
 
 	self.createHandles();
+
+	//bind event, if any
+	if (self.resize) {
+		self.on('resize', self.resize);
+	}
 }
 
 inherit(Resizable, Emitter);
