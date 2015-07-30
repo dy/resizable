@@ -59,3 +59,4 @@ instances
 *node_modules
 
 bundle*
+mocha*
