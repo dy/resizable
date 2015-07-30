@@ -26,6 +26,7 @@
   "homepage": "https://github.com/dfcreative/resizable",
   "devDependencies": {
     "watchify": "^3.3.0",
+    "queried": "^1.4.4",
     "mocha": "^2.2.5"
   },
   "dependencies": {
@@ -36,7 +37,6 @@
     "mucss": "^1.0.2",
     "mumath": "^1.0.2",
     "mutype": "^0.3.9",
-    "queried": "^1.4.4",
     "split-keys": "0.0.7",
     "xtend": "^4.0.0"
   }

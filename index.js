@@ -4,7 +4,6 @@ var on = require('emmy/on');
 var isArray = require('mutype/is-array');
 var isString = require('mutype/is-string');
 var isObject = require('mutype/is-object');
-var q = require('queried');
 var extend = require('xtend/mutable');
 var inherit = require('inherits');
 var Emitter = require('events');
