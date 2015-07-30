@@ -8,7 +8,7 @@
   },
   "scripts": {
     "watch": "watchify -r ./index.js:resizable -r draggy -r queried -r domify -d -o test/bundle.js",
-    "build": "browserify -r ./index.js:resizable -r draggy -r queried -r domify -o test/bundle.js"
+    "build": "browserify -t babelify -r ./index.js:resizable -r draggy -r queried -r domify -o test/bundle.js"
   },
   "repository": {
     "type": "git",
@@ -26,9 +26,11 @@
   },
   "homepage": "https://github.com/dfcreative/resizable",
   "devDependencies": {
-    "watchify": "^3.3.0",
+    "babelify": "^6.1.3",
+    "browserify": "^11.0.1",
+    "mocha": "^2.2.5",
     "queried": "^1.4.4",
-    "mocha": "^2.2.5"
+    "watchify": "^3.3.0"
   },
   "dependencies": {
     "domify": "^1.3.3",
