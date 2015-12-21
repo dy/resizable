@@ -1,0 +1,1 @@
+* doesn’t work properly along with draggy on connector-lines
