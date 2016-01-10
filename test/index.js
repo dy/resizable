@@ -96,13 +96,14 @@ test.only('Within', function () {
 	container.appendChild(el);
 	body.appendChild(container);
 
-	var draggable = Draggable(el, {
-		within: container,
-		css3:true
-	});
+	// var draggable = Draggable(el, {
+	// 	within: container,
+	// 	css3:false
+	// });
 
 	var resizable = Resizable(el, {
-		within: 'parent'
+		within: 'parent',
+		draggable: true
 	});
 });
 

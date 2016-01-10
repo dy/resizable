@@ -39,6 +39,19 @@ function Resizable (el, options) {
 
 	extend(self, options);
 
+	//if element isn’t draggable yet - force it to be draggable, without movements
+	if (self.draggable === true) {
+		self.draggable = new Draggable(self.element, {
+			within: self.within
+		});
+	} else if (self.draggable) {
+		self.draggable = new Draggable(self.element, self.draggable);
+	} else {
+		self.draggable = new Draggable(self.element, {
+			handle: null
+		});
+	}
+
 	self.createHandles();
 
 	//bind event, if any
@@ -144,6 +157,7 @@ proto.createHandle = function(handle, direction){
 	//make handle draggable
 	var draggy = new Draggable(handle, {
 		within: within,
+		//can’t use abs pos, as we engage it in styling
 		// css3: false,
 		threshold: self.threshold,
 		axis: /^[ns]$/.test(direction) ? 'y' : /^[we]$/.test(direction) ? 'x' : 'both'
@@ -154,15 +168,10 @@ proto.createHandle = function(handle, direction){
 		self.b = borders(el);
 		self.p = paddings(el);
 
-		//parse initial offsets
+		//parse initial offsets in dragging
 		var s = getComputedStyle(el);
-		self.offsets = [parseCSSValue(s.left), parseCSSValue(s.top)];
-
-		//fix top-left position
-		css(el, {
-			left: self.offsets[0],
-			top: self.offsets[1]
-		});
+		// self.offsets = [parseCSSValue(s.left), parseCSSValue(s.top)];
+		self.offsets = self.draggable.getCoords();
 
 		//recalc border-box
 		if (getComputedStyle(el).boxSizing === 'border-box') {
@@ -177,21 +186,35 @@ proto.createHandle = function(handle, direction){
 		}
 
 		//save initial size
-		self.size = [el.offsetWidth - self.b.left - self.b.right - self.p.left - self.p.right, el.offsetHeight - self.b.top - self.b.bottom - self.p.top - self.p.bottom];
+		self.initSize = [el.offsetWidth - self.b.left - self.b.right - self.p.left - self.p.right, el.offsetHeight - self.b.top - self.b.bottom - self.p.top - self.p.bottom];
 
-		//calc limits (max height/width)
+		//get size
+		self.initSizeFull = [
+			el.offsetWidth,
+			el.offsetHeight
+		];
+
+		//movement prev coords
+		self.prevCoords = [0, 0];
+
+		//shift-caused offset
+		self.shiftOffset = [0, 0];
+
+		//central initial coords
+		self.center = [self.offsets[0] + self.initSize[0]/2, self.offsets[1] + self.initSize[1]/2];
+
+		//calc limits (max height/width from left/right)
 		if (self.within) {
 			var po = offsets(within);
 			var o = offsets(el);
-			// var pin = [draggy.pin[2]/2, draggy.pin[3]/2];
-			self.limits = [
-				o.left - po.left + self.size[0],
-				o.top - po.top + self.size[1],
-				po.right - o.right + self.size[0],
-				po.bottom - o.bottom + self.size[1]
+			self.maxSize = [
+				o.left - po.left + self.initSize[0],
+				o.top - po.top + self.initSize[1],
+				po.right - o.right + self.initSize[0],
+				po.bottom - o.bottom + self.initSize[1]
 			];
 		} else {
-			self.limits = [9999, 9999, 9999, 9999];
+			self.maxSize = [9999, 9999, 9999, 9999];
 		}
 
 		//preset mouse cursor
@@ -203,13 +226,18 @@ proto.createHandle = function(handle, direction){
 		for (var h in self.handles){
 			css(self.handles[h], 'cursor', null);
 		}
+
 	});
 
 	draggy.on('drag', function () {
 		var coords = draggy.getCoords();
 
-		//pin factor
-		var pin = [draggy.pin[2]/2, draggy.pin[3]/2];
+		//diff from the prev coords
+		var diff = [
+			coords[0] - self.prevCoords[0],
+			coords[1] - self.prevCoords[1]
+		];
+		self.prevCoords = coords;
 
 		//change width/height properly
 		switch (direction) {
@@ -217,62 +245,98 @@ proto.createHandle = function(handle, direction){
 			case 's':
 			case 'e':
 				if (draggy.shiftKey) {
+					var prevSize = [
+						el.offsetWidth,
+						el.offsetHeight
+					];
+
+
+					//correct size & offset shift is pressed
+					self.shiftOffset[0] += diff[0];
+					self.shiftOffset[1] += diff[1];
+
+					//we should limit shiftoffset to avoid clipping
+
+					// self.offsets[0] += difX/2;
+					// self.offsets[1] += difY/2;
+
+					// self.maxSize[0] -= difX/2;
+					// self.maxSize[1] -= difX/2;
+
+					//shift placement is relative to initial center line
 					css(el, {
-						width: between(self.size[0] + coords[0], 0, self.limits[2]),
-						height: between(self.size[1] + coords[1], 0, self.limits[3])
+						width: self.center[0] + (self.initSize[0])/2 + self.shiftOffset[0],
+						height: self.center[1] + (self.initSize[1])/2 + self.shiftOffset[1]
 					});
-					// css(el, {
-					// 	right:
-					// })
-				} else {
+
+					var difX = prevSize[0] - el.offsetWidth;
+					var difY = prevSize[1] - el.offsetHeight;
+
+					//if no change of size - reset shiftOffset
+					if (!difX) {
+						self.shiftOffset[0] -= diff[0];
+					} else {
+						css(el, {
+							left: self.center[0] - (self.initSize[0])/2 - self.shiftOffset[0]/2
+						});
+					}
+					if (!difY) {
+						self.shiftOffset[1] -= diff[1];
+					} else {
+						css(el, {
+							top: self.center[1] - (self.initSize[1])/2 - self.shiftOffset[1]/2
+						});
+					}
+				}
+				else {
 					css(el, {
-						width: between(self.size[0] + coords[0], 0, self.limits[2]),
-						height: between(self.size[1] + coords[1], 0, self.limits[3])
+						width: Math.min(
+							self.initSize[0] + coords[0],
+							self.maxSize[2]
+						),
+						height: Math.min(
+							self.initSize[1] + coords[1],
+							self.maxSize[3]
+						)
 					});
 				}
+
 				break;
 			case 'nw':
 			case 'n':
 			case 'w':
 				css(el, {
-					width: between(self.size[0] - coords[0], 0, self.limits[0]),
-					height: between(self.size[1] - coords[1], 0, self.limits[1])
+					width: between(self.initSize[0] - coords[0], 0, self.maxSize[0]),
+					height: between(self.initSize[1] - coords[1], 0, self.maxSize[1])
 				});
 
 				//subtract t/l on changed size
-				var difX = self.size[0] + self.b.left + self.b.right + self.p.left + self.p.right - el.offsetWidth;
-				var difY = self.size[1] + self.b.top + self.b.bottom + self.p.top + self.p.bottom - el.offsetHeight;
+				var deltaX = self.initSizeFull[0] - el.offsetWidth;
+				var deltaY = self.initSizeFull[1] - el.offsetHeight;
 
-				css(el, {
-					left: self.offsets[0] + difX,
-					top: self.offsets[1] + difY
-				});
+				self.draggable.setCoords(self.offsets[0] + deltaX, self.offsets[1] + deltaY);
 				break;
 			case 'ne':
 				css(el, {
-					width: between(self.size[0] + coords[0], 0, self.limits[2]),
-					height: between(self.size[1] - coords[1], 0, self.limits[1])
+					width: between(self.initSize[0] + coords[0], 0, self.maxSize[2]),
+					height: between(self.initSize[1] - coords[1], 0, self.maxSize[1])
 				});
 
 				//subtract t/l on changed size
-				var difY = self.size[1] + self.b.top + self.b.bottom + self.p.top + self.p.bottom - el.offsetHeight;
+				var deltaY = self.initSizeFull[1] - el.offsetHeight;
 
-				css(el, {
-					top: self.offsets[1] + difY
-				});
+				self.draggable.setCoords(null, self.offsets[1] + deltaY);
 				break;
 			case 'sw':
 				css(el, {
-					width: between(self.size[0] - coords[0], 0, self.limits[0]),
-					height: between(self.size[1] + coords[1], 0, self.limits[3])
+					width: between(self.initSize[0] - coords[0], 0, self.maxSize[0]),
+					height: between(self.initSize[1] + coords[1], 0, self.maxSize[3])
 				});
 
 				//subtract t/l on changed size
-				var difX = self.size[0] + self.b.left + self.b.right + self.p.left + self.p.right - el.offsetWidth;
+				var deltaX = self.initSizeFull[0] - el.offsetWidth;
 
-				css(el, {
-					left: self.offsets[0] + difX
-				});
+				self.draggable.setCoords(self.offsets[0] + deltaX);
 				break;
 		};
 

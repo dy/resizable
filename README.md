@@ -2,9 +2,6 @@
 
 Resizable behaviour for elements. [Demo](https://dfcreative.github.io/resizable).
 
-**Note:** Elements in demo have been made [draggable](https://github.com/dfcreative/draggy).
-This behavior is not included with __resizable__.
-
 [![npm install resizable](https://nodei.co/npm/resizable.png?mini=true)](https://nodei.co/npm/resizable/)
 
 
@@ -17,7 +14,8 @@ var el = document.querySelector('.my-element');
 var resizable = new Resizable(el, {
 	within: 'parent',
 	handles: 's, se, e',
-	threshold: 10
+	threshold: 10,
+	draggable: false
 });
 
 resizable.on('resize', function(){
@@ -33,6 +31,7 @@ resizable.on('resize', function(){
 | `resize` | `undefined` | Resize event handler. |
 | `threshold` | `10` | A movement threshold required to start resize - whether array, number or function. |
 | `within` | `document` | Restrict movement within the container. Pass `'parent'` to take parent node. |
+| `draggable` | `false` | Make element [draggable](http://github.com/dfcreative/draggy) as well. Set an object to pass options to draggable. |
 
 \* Default handles are dependent on the styling of the given element. Inline
 elements will default to `s`, `se`, `e`, while elements that can support full
