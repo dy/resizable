@@ -1,4 +1,4 @@
-var Draggable = require('draggy');
+var Draggable = require('../draggy');
 var emit = require('emmy/emit');
 var on = require('emmy/on');
 var isArray = require('mutype/is-array');
@@ -7,7 +7,7 @@ var isObject = require('mutype/is-object');
 var extend = require('xtend/mutable');
 var inherit = require('inherits');
 var Emitter = require('events');
-var between = require('mumath/between');
+var between = require('mumath/clamp');
 var splitKeys = require('split-keys');
 var css = require('mucss/css');
 var paddings = require('mucss/padding');
@@ -137,9 +137,13 @@ proto.createHandle = function(handle, direction){
 	//save direction
 	handle.direction = direction;
 
+	//detect self.within
+	//FIXME: may be painful if resizable is created on detached element
+	var within = self.within === 'parent' ? self.element.parentNode : self.within;
+
 	//make handle draggable
 	var draggy = new Draggable(handle, {
-		within: self.within,
+		within: within,
 		// css3: false,
 		threshold: self.threshold,
 		axis: /^[ns]$/.test(direction) ? 'y' : /^[we]$/.test(direction) ? 'x' : 'both'
@@ -177,17 +181,18 @@ proto.createHandle = function(handle, direction){
 
 		//calc limits (max height/width)
 		if (self.within) {
-			var po = offsets(self.within);
+			var po = offsets(within);
 			var o = offsets(el);
+			// var pin = [draggy.pin[2]/2, draggy.pin[3]/2];
 			self.limits = [
 				o.left - po.left + self.size[0],
 				o.top - po.top + self.size[1],
 				po.right - o.right + self.size[0],
-				po.bottom - o.bottom + self.size[1]];
+				po.bottom - o.bottom + self.size[1]
+			];
 		} else {
 			self.limits = [9999, 9999, 9999, 9999];
 		}
-
 
 		//preset mouse cursor
 		css(root, {
@@ -200,18 +205,31 @@ proto.createHandle = function(handle, direction){
 		}
 	});
 
-	draggy.on('drag', function(e){
+	draggy.on('drag', function () {
 		var coords = draggy.getCoords();
+
+		//pin factor
+		var pin = [draggy.pin[2]/2, draggy.pin[3]/2];
 
 		//change width/height properly
 		switch (direction) {
 			case 'se':
 			case 's':
 			case 'e':
-				css(el, {
-					width: between(self.size[0] + coords[0], 0, self.limits[2]),
-					height: between(self.size[1] + coords[1], 0, self.limits[3])
-				});
+				if (draggy.shiftKey) {
+					css(el, {
+						width: between(self.size[0] + coords[0], 0, self.limits[2]),
+						height: between(self.size[1] + coords[1], 0, self.limits[3])
+					});
+					// css(el, {
+					// 	right:
+					// })
+				} else {
+					css(el, {
+						width: between(self.size[0] + coords[0], 0, self.limits[2]),
+						height: between(self.size[1] + coords[1], 0, self.limits[3])
+					});
+				}
 				break;
 			case 'nw':
 			case 'n':
@@ -221,7 +239,7 @@ proto.createHandle = function(handle, direction){
 					height: between(self.size[1] - coords[1], 0, self.limits[1])
 				});
 
-				// //subtract t/l on changed size
+				//subtract t/l on changed size
 				var difX = self.size[0] + self.b.left + self.b.right + self.p.left + self.p.right - el.offsetWidth;
 				var difY = self.size[1] + self.b.top + self.b.bottom + self.p.top + self.p.bottom - el.offsetHeight;
 
