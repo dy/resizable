@@ -2,7 +2,7 @@ var Resizable = require('../index');
 var Draggable = require('draggy');
 var q = require('queried');
 var domify = require('domify');
-var test = require('tst').only();
+var test = require('tst')//.only();
 
 var doc = document, body = doc.body;
 
@@ -76,7 +76,7 @@ test('Min/max size', function () {
 	});
 });
 
-test.only('Within', function () {
+test('Within', function () {
 	var el = domify(`
 		<div class="resizable" style="
 			position: absolute;
@@ -95,11 +95,6 @@ test.only('Within', function () {
 	`)
 	container.appendChild(el);
 	body.appendChild(container);
-
-	// var draggable = Draggable(el, {
-	// 	within: container,
-	// 	css3:false
-	// });
 
 	var resizable = Resizable(el, {
 		within: 'parent',

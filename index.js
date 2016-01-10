@@ -1,4 +1,9 @@
-var Draggable = require('../draggy');
+/**
+ * @module  resizable
+ */
+
+
+var Draggable = require('draggy');
 var emit = require('emmy/emit');
 var on = require('emmy/on');
 var isArray = require('mutype/is-array');
@@ -14,7 +19,6 @@ var paddings = require('mucss/padding');
 var borders = require('mucss/border');
 var margins = require('mucss/margin');
 var offsets = require('mucss/offset');
-var parseCSSValue = require('mucss/parse-value');
 
 
 var doc = document, win = window, root = doc.documentElement;
@@ -51,6 +55,8 @@ function Resizable (el, options) {
 			handle: null
 		});
 	}
+
+	self.draggable.css3 = true;
 
 	self.createHandles();
 
@@ -233,46 +239,65 @@ proto.createHandle = function(handle, direction){
 	draggy.on('drag', function () {
 		var coords = draggy.getCoords();
 
+		var prevSize = [
+			el.offsetWidth,
+			el.offsetHeight
+		];
+
 		//change width/height properly
-		switch (direction) {
-			case 'se':
-			case 's':
-			case 'e':
-				if (draggy.shiftKey) {
-					var prevSize = [
-						el.offsetWidth,
-						el.offsetHeight
-					];
+		if (draggy.shiftKey) {
+			switch (direction) {
+				case 'se':
+				case 's':
+				case 'e':
+					break;
+				case 'nw':
+				case 'n':
+				case 'w':
+					coords[0] = -coords[0];
+					coords[1] = -coords[1];
+					break;
+				case 'ne':
+					coords[1] = -coords[1];
+					break;
+				case 'sw':
+					coords[0] = -coords[0];
+					break;
+			};
 
-					//set placement is relative to initial center line
-					css(el, {
-						width: Math.min(
-							self.initSize[0] + coords[0]*2,
-							self.maxSize[2] + coords[0],
-							self.maxSize[0] + coords[0]
-						),
-						height: Math.min(
-							self.initSize[1] + coords[1]*2,
-							self.maxSize[3] + coords[1],
-							self.maxSize[1] + coords[1]
-						)
-					});
+			//set placement is relative to initial center line
+			css(el, {
+				width: Math.min(
+					self.initSize[0] + coords[0]*2,
+					self.maxSize[2] + coords[0],
+					self.maxSize[0] + coords[0]
+				),
+				height: Math.min(
+					self.initSize[1] + coords[1]*2,
+					self.maxSize[3] + coords[1],
+					self.maxSize[1] + coords[1]
+				)
+			});
 
-					var difX = prevSize[0] - el.offsetWidth;
-					var difY = prevSize[1] - el.offsetHeight;
+			var difX = prevSize[0] - el.offsetWidth;
+			var difY = prevSize[1] - el.offsetHeight;
 
-					//update draggable limits
-					self.draggable.updateLimits();
+			//update draggable limits
+			self.draggable.updateLimits();
 
-					if (difX) {
-						self.draggable.move(self.center[0] - self.initSize[0]/2 - coords[0]);
-					}
+			if (difX) {
+				self.draggable.move(self.center[0] - self.initSize[0]/2 - coords[0]);
+			}
 
-					if (difY) {
-						self.draggable.move(null, self.center[1] - self.initSize[1]/2 - coords[1]);
-					}
-				}
-				else {
+			if (difY) {
+				self.draggable.move(null, self.center[1] - self.initSize[1]/2 - coords[1]);
+			}
+		}
+		else {
+			switch (direction) {
+				case 'se':
+				case 's':
+				case 'e':
 					css(el, {
 						width: Math.min(
 							self.initSize[0] + coords[0],
@@ -283,46 +308,59 @@ proto.createHandle = function(handle, direction){
 							self.maxSize[3]
 						)
 					});
-				}
 
-				break;
-			case 'nw':
-			case 'n':
-			case 'w':
-				css(el, {
-					width: between(self.initSize[0] - coords[0], 0, self.maxSize[0]),
-					height: between(self.initSize[1] - coords[1], 0, self.maxSize[1])
-				});
+					self.draggable.updateLimits();
 
-				//subtract t/l on changed size
-				var deltaX = self.initSizeFull[0] - el.offsetWidth;
-				var deltaY = self.initSizeFull[1] - el.offsetHeight;
+					self.draggable.move(
+						self.center[0] - self.initSize[0]/2,
+						self.center[1] - self.initSize[1]/2
+					);
 
-				self.draggable.setCoords(self.offsets[0] + deltaX, self.offsets[1] + deltaY);
-				break;
-			case 'ne':
-				css(el, {
-					width: between(self.initSize[0] + coords[0], 0, self.maxSize[2]),
-					height: between(self.initSize[1] - coords[1], 0, self.maxSize[1])
-				});
+					break;
+				case 'nw':
+				case 'n':
+				case 'w':
+					css(el, {
+						width: between(self.initSize[0] - coords[0], 0, self.maxSize[0]),
+						height: between(self.initSize[1] - coords[1], 0, self.maxSize[1])
+					});
 
-				//subtract t/l on changed size
-				var deltaY = self.initSizeFull[1] - el.offsetHeight;
+					self.draggable.updateLimits();
 
-				self.draggable.setCoords(null, self.offsets[1] + deltaY);
-				break;
-			case 'sw':
-				css(el, {
-					width: between(self.initSize[0] - coords[0], 0, self.maxSize[0]),
-					height: between(self.initSize[1] + coords[1], 0, self.maxSize[3])
-				});
+					//subtract t/l on changed size
+					var deltaX = self.initSizeFull[0] - el.offsetWidth;
+					var deltaY = self.initSizeFull[1] - el.offsetHeight;
 
-				//subtract t/l on changed size
-				var deltaX = self.initSizeFull[0] - el.offsetWidth;
+					self.draggable.move(self.offsets[0] + deltaX, self.offsets[1] + deltaY);
+					break;
+				case 'ne':
+					css(el, {
+						width: between(self.initSize[0] + coords[0], 0, self.maxSize[2]),
+						height: between(self.initSize[1] - coords[1], 0, self.maxSize[1])
+					});
 
-				self.draggable.setCoords(self.offsets[0] + deltaX);
-				break;
-		};
+					self.draggable.updateLimits();
+
+					//subtract t/l on changed size
+					var deltaY = self.initSizeFull[1] - el.offsetHeight;
+
+					self.draggable.move(null, self.offsets[1] + deltaY);
+					break;
+				case 'sw':
+					css(el, {
+						width: between(self.initSize[0] - coords[0], 0, self.maxSize[0]),
+						height: between(self.initSize[1] + coords[1], 0, self.maxSize[3])
+					});
+
+					self.draggable.updateLimits();
+
+					//subtract t/l on changed size
+					var deltaX = self.initSizeFull[0] - el.offsetWidth;
+
+					self.draggable.move(self.offsets[0] + deltaX);
+					break;
+			};
+		}
 
 		//trigger callbacks
 		emit(self, 'resize');
