@@ -168,9 +168,11 @@ proto.createHandle = function(handle, direction){
 		self.b = borders(el);
 		self.p = paddings(el);
 
-		//parse initial offsets in dragging
+		//update draggalbe params
+		self.draggable.update(e);
+
+		//save initial dragging offsets
 		var s = getComputedStyle(el);
-		// self.offsets = [parseCSSValue(s.left), parseCSSValue(s.top)];
 		self.offsets = self.draggable.getCoords();
 
 		//recalc border-box
@@ -188,7 +190,7 @@ proto.createHandle = function(handle, direction){
 		//save initial size
 		self.initSize = [el.offsetWidth - self.b.left - self.b.right - self.p.left - self.p.right, el.offsetHeight - self.b.top - self.b.bottom - self.p.top - self.p.bottom];
 
-		//get size
+		//save initial full size
 		self.initSizeFull = [
 			el.offsetWidth,
 			el.offsetHeight
@@ -226,18 +228,10 @@ proto.createHandle = function(handle, direction){
 		for (var h in self.handles){
 			css(self.handles[h], 'cursor', null);
 		}
-
 	});
 
 	draggy.on('drag', function () {
 		var coords = draggy.getCoords();
-
-		//diff from the prev coords
-		var diff = [
-			coords[0] - self.prevCoords[0],
-			coords[1] - self.prevCoords[1]
-		];
-		self.prevCoords = coords;
 
 		//change width/height properly
 		switch (direction) {
@@ -250,42 +244,32 @@ proto.createHandle = function(handle, direction){
 						el.offsetHeight
 					];
 
-
-					//correct size & offset shift is pressed
-					self.shiftOffset[0] += diff[0];
-					self.shiftOffset[1] += diff[1];
-
-					//we should limit shiftoffset to avoid clipping
-
-					// self.offsets[0] += difX/2;
-					// self.offsets[1] += difY/2;
-
-					// self.maxSize[0] -= difX/2;
-					// self.maxSize[1] -= difX/2;
-
-					//shift placement is relative to initial center line
+					//set placement is relative to initial center line
 					css(el, {
-						width: self.center[0] + (self.initSize[0])/2 + self.shiftOffset[0],
-						height: self.center[1] + (self.initSize[1])/2 + self.shiftOffset[1]
+						width: Math.min(
+							self.initSize[0] + coords[0]*2,
+							self.maxSize[2] + coords[0],
+							self.maxSize[0] + coords[0]
+						),
+						height: Math.min(
+							self.initSize[1] + coords[1]*2,
+							self.maxSize[3] + coords[1],
+							self.maxSize[1] + coords[1]
+						)
 					});
 
 					var difX = prevSize[0] - el.offsetWidth;
 					var difY = prevSize[1] - el.offsetHeight;
 
-					//if no change of size - reset shiftOffset
-					if (!difX) {
-						self.shiftOffset[0] -= diff[0];
-					} else {
-						css(el, {
-							left: self.center[0] - (self.initSize[0])/2 - self.shiftOffset[0]/2
-						});
+					//update draggable limits
+					self.draggable.updateLimits();
+
+					if (difX) {
+						self.draggable.move(self.center[0] - self.initSize[0]/2 - coords[0]);
 					}
-					if (!difY) {
-						self.shiftOffset[1] -= diff[1];
-					} else {
-						css(el, {
-							top: self.center[1] - (self.initSize[1])/2 - self.shiftOffset[1]/2
-						});
+
+					if (difY) {
+						self.draggable.move(null, self.center[1] - self.initSize[1]/2 - coords[1]);
 					}
 				}
 				else {
