@@ -119,3 +119,19 @@ test('Outside', function () {
 
 	});
 });
+
+test('Destroy', function () {
+	var el = domify(`
+	<div class="resizable" style="position: absolute; top: 200px; left: 300px; min-width: 80px; max-width:120px; min-height: 80px; max-height: 120px;">Min/max size</div>
+	`);
+	body.appendChild(el);
+
+	var resizableInstance = new Resizable(el, {
+		within: 'parent',
+		handles: 'e',
+		threshold: 1,
+		draggable: false
+	});
+
+	resizableInstance.destroy();
+});

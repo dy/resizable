@@ -397,7 +397,7 @@ proto.destroy = function () {
 	//remove all handles
 	for (var hName in this.handles){
 		this.element.removeChild(this.handles[hName]);
-		this.handles[hName].draggable.destroy();
+		Draggable.cache.get(this.handles[hName]).destroy();
 	}
 
 
