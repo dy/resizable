@@ -252,10 +252,14 @@ proto.createHandle = function(handle, direction){
 				case 'e':
 					break;
 				case 'nw':
-				case 'n':
-				case 'w':
 					coords[0] = -coords[0];
 					coords[1] = -coords[1];
+					break;
+				case 'n':
+					coords[1] = -coords[1];
+					break;
+				case 'w':
+					coords[0] = -coords[0];
 					break;
 				case 'ne':
 					coords[1] = -coords[1];
@@ -296,8 +300,6 @@ proto.createHandle = function(handle, direction){
 		else {
 			switch (direction) {
 				case 'se':
-				case 's':
-				case 'e':
 					css(el, {
 						width: Math.min(
 							self.initSize[0] + coords[0],
@@ -309,6 +311,24 @@ proto.createHandle = function(handle, direction){
 						)
 					});
 
+				case 's':
+					css(el, {
+						height: Math.min(
+							self.initSize[1] + coords[1],
+							self.maxSize[3]
+						)
+					});
+
+				case 'e':
+					css(el, {
+						width: Math.min(
+							self.initSize[0] + coords[0],
+							self.maxSize[2]
+						)
+					});
+				case 'se':
+				case 's':
+				case 'e':
 					self.draggable.updateLimits();
 
 					self.draggable.move(
@@ -317,14 +337,23 @@ proto.createHandle = function(handle, direction){
 					);
 
 					break;
+
 				case 'nw':
-				case 'n':
-				case 'w':
 					css(el, {
 						width: between(self.initSize[0] - coords[0], 0, self.maxSize[0]),
 						height: between(self.initSize[1] - coords[1], 0, self.maxSize[1])
 					});
-
+				case 'n':
+					css(el, {
+						height: between(self.initSize[1] - coords[1], 0, self.maxSize[1])
+					});
+				case 'w':
+					css(el, {
+						width: between(self.initSize[0] - coords[0], 0, self.maxSize[0])
+					});
+				case 'nw':
+				case 'n':
+				case 'w':
 					self.draggable.updateLimits();
 
 					//subtract t/l on changed size
@@ -333,6 +362,7 @@ proto.createHandle = function(handle, direction){
 
 					self.draggable.move(self.offsets[0] + deltaX, self.offsets[1] + deltaY);
 					break;
+
 				case 'ne':
 					css(el, {
 						width: between(self.initSize[0] + coords[0], 0, self.maxSize[2]),

@@ -7,7 +7,7 @@ var test = require('tst')//.only();
 var doc = document, body = doc.body;
 
 
-test('Box-sizing', function () {
+test.skip('Box-sizing', function () {
 	// var resEls = document.querySelectorAll('.resizable');
 	// for (var i = 0, l = resEls.length, resEl; i < l; i++){
 	// 	resEl = resEls[i];
@@ -134,4 +134,16 @@ test('Destroy', function () {
 	});
 
 	resizableInstance.destroy();
+});
+
+test('height: 100perc', function () {
+	var el = domify(`
+		<div class="heighty resizable" style="width: 20px">heighty</div>
+	`);
+	body.appendChild(el);
+
+	Resizable(el, {
+		draggable: true,
+		within: body
+	});
 });
