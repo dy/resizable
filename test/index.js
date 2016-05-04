@@ -52,13 +52,14 @@ test('Position:absolute resize', function () {
 	`);
 	body.appendChild(el);
 
+	var resizable = Resizable(el, {
+		handles: 'e',
+		draggable: true
+	});
 	var draggable = Draggable(el, {
 
 	});
 
-	var resizable = Resizable(el, {
-
-	});
 });
 
 test('Min/max size', function () {
@@ -143,7 +144,7 @@ test('height: 100perc', function () {
 	body.appendChild(el);
 
 	Resizable(el, {
-		draggable: true,
+		draggable: false,
 		within: body
 	});
 });

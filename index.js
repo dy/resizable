@@ -46,17 +46,17 @@ function Resizable (el, options) {
 	//if element isn’t draggable yet - force it to be draggable, without movements
 	if (self.draggable === true) {
 		self.draggable = new Draggable(self.element, {
-			within: self.within
+			within: self.within,
+			css3: true
 		});
 	} else if (self.draggable) {
 		self.draggable = new Draggable(self.element, self.draggable);
+		self.draggable.css3 = true;
 	} else {
 		self.draggable = new Draggable(self.element, {
 			handle: null
 		});
 	}
-
-	self.draggable.css3 = true;
 
 	self.createHandles();
 
