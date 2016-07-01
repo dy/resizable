@@ -32,6 +32,7 @@ resizable.on('resize', function(){
 | `threshold` | `10` | A movement threshold required to start resize - whether array, number or function. |
 | `within` | `document` | Restrict movement within the container. Pass `'parent'` to take parent node. |
 | `draggable` | `false` | Make element [draggable](http://github.com/dfcreative/draggy) as well. Set an object to pass options to draggable. |
+| `css3` | `true` | Use `translate3d` for defining position. |
 
 \* Default handles are dependent on the styling of the given element. Inline
 elements will default to `s`, `se`, `e`, while elements that can support full

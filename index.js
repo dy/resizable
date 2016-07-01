@@ -47,11 +47,11 @@ function Resizable (el, options) {
 	if (self.draggable === true) {
 		self.draggable = new Draggable(self.element, {
 			within: self.within,
-			css3: true
+			css3: self.css3
 		});
 	} else if (self.draggable) {
 		self.draggable = new Draggable(self.element, self.draggable);
-		self.draggable.css3 = true;
+		self.draggable.css3 = self.css3;
 	} else {
 		self.draggable = new Draggable(self.element, {
 			handle: null
@@ -70,6 +70,15 @@ inherit(Resizable, Emitter);
 
 
 var proto = Resizable.prototype;
+
+
+/** Use css3 for draggable, if any */
+proto.css3 = true;
+
+
+/** Make itself draggable to the row */
+proto.draggable = false;
+
 
 
 /** Create handles according to options */
@@ -438,10 +447,8 @@ proto.destroy = function () {
 
 var w = 10;
 
-
 /** Threshold size */
 proto.threshold = w;
-
 
 /** Styles for handles */
 var handleStyles = splitKeys({
