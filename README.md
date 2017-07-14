@@ -33,6 +33,7 @@ resizable.on('resize', function(){
 | `within` | `document` | Restrict movement within the container. Pass `'parent'` to take parent node. |
 | `draggable` | `false` | Make element [draggable](http://github.com/dfcreative/draggy) as well. Set an object to pass options to draggable. |
 | `css3` | `true` | Use `translate3d` for defining position. |
+| `multiplier` | `1` | Influence the dragging speed by multiplying it with a given value. |
 
 \* Default handles are dependent on the styling of the given element. Inline
 elements will default to `s`, `se`, `e`, while elements that can support full

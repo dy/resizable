@@ -40,6 +40,7 @@ function Resizable (el, options) {
 	}
 
 	self.element = el;
+	self.multiplier = options.multiplier || 1;
 
 	extend(self, options);
 
@@ -247,6 +248,10 @@ proto.createHandle = function(handle, direction){
 
 	draggy.on('drag', function () {
 		var coords = draggy.getCoords();
+
+		if (self.multiplier !== 1) {
+			coords = coords.map(n => n * self.multiplier);
+		}
 
 		var prevSize = [
 			el.offsetWidth,
