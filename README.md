@@ -42,4 +42,6 @@ resize will default to all handles being enabled.
 
 | Name | Description |
 |---|---|
+| `resizestart` | Element resize started. Called on self. |
 | `resize` | Element resized. Called on self. |
+| `resizeend` | Element resize ended. Called on self. |
