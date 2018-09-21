@@ -243,6 +243,10 @@ proto.createHandle = function(handle, direction){
 		for (var h in self.handles){
 			css(self.handles[h], 'cursor', null);
 		}
+
+		//trigger callbacks
+		emit(self, 'resizestart');
+		emit(el, 'resizestart');
 	});
 
 	draggy.on('drag', function () {
@@ -418,6 +422,10 @@ proto.createHandle = function(handle, direction){
 		for (var h in self.handles){
 			css(self.handles[h], 'cursor', self.handles[h].direction + '-resize');
 		}
+
+		//trigger callbacks
+		emit(self, 'resizeend');
+		emit(el, 'resizeend');
 	});
 
 	//append styles
