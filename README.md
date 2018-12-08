@@ -45,3 +45,19 @@ resize will default to all handles being enabled.
 | `resizestart` | Element resize started. Called on self. |
 | `resize` | Element resized. Called on self. |
 | `resizeend` | Element resize ended. Called on self. |
+
+## Handles
+
+When using a containing element to constrain the size of the target element, the maximum size of the target element is limited to the containing elements' size - 1/2 the width of the handle being used to resize the target element.  If you need to be able to resize fully to the containing element, you can use css overrides to position the handles inside the target element.  
+
+```
+.resizable-handle-w { left: 0 !important; }
+.resizable-handle-n { top: 0 !important; }
+.resizable-handle-e { right: 0 !important; }
+.resizable-handle-s { bottom: 0 !important; }
+
+.resizable-handle-nw { left: 0 !important; top: 0 !important; }
+.resizable-handle-ne { right: 0 !important; top: 0 !important; }
+.resizable-handle-se { right: 0 !important; bottom: 0 !important; }
+.resizable-handle-sw { left: 0 !important; bottom: 0 !important; }
+```
