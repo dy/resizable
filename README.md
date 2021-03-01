@@ -1,6 +1,6 @@
 # Resizable
 
-Resizable behaviour for elements. [Demo](https://dfcreative.github.io/resizable).
+Resizable behaviour for elements. [Demo](https://dy.github.io/resizable).
 
 [![npm install resizable](https://nodei.co/npm/resizable.png?mini=true)](https://nodei.co/npm/resizable/)
 
