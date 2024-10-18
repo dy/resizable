@@ -1,6 +1,7 @@
 import Draggable from 'draggy';
 import emit from 'emmy/emit';
-import splitKeys from 'split-keys';
+import on from 'emmy/on';
+import off from 'emmy/off';
 import css from 'mucss/css';
 import paddings from 'mucss/padding';
 import borders from 'mucss/border';
@@ -63,6 +64,9 @@ proto.css3 = true;
 /** Make itself draggable to the row */
 proto.draggable = false;
 
+// events
+proto.on = function (event, callback) { on(this, event, callback) }
+proto.off = function (event, callback) { off(this, event, callback) }
 
 
 /** Create handles according to options */
@@ -443,57 +447,80 @@ var w = 10;
 proto.threshold = w;
 
 /** Styles for handles */
-var handleStyles = splitKeys({
-	'e,w,n,s,nw,ne,sw,se': {
-		'position': 'absolute'
+var handleStyles = {
+	"e": {
+		"left": "auto",
+		"right": "-5px",
+		"position": "absolute",
+		"width": "10px",
+		"top": "0px",
+		"bottom": "0px"
 	},
-	'e,w': {
-		'top, bottom': 0,
-		'width': w
+	"w": {
+		"right": "auto",
+		"left": "-5px",
+		"position": "absolute",
+		"width": "10px",
+		"top": "0px",
+		"bottom": "0px"
 	},
-	'e': {
-		'left': 'auto',
-		'right': -w / 2
+	"s": {
+		"top": "auto",
+		"bottom": "-5px",
+		"position": "absolute",
+		"height": "10px",
+		"left": "0px",
+		"right": "0px"
 	},
-	'w': {
-		'right': 'auto',
-		'left': -w / 2
+	"n": {
+		"bottom": "auto",
+		"top": "-5px",
+		"position": "absolute",
+		"height": "10px",
+		"left": "0px",
+		"right": "0px"
 	},
-	's': {
-		'top': 'auto',
-		'bottom': -w / 2
+	"nw": {
+		"position": "absolute",
+		"width": "10px",
+		"height": "10px",
+		"z-index": 1,
+		"top": "-5px",
+		"left": "-5px",
+		"bottom": "auto",
+		"right": "auto"
 	},
-	'n': {
-		'bottom': 'auto',
-		'top': -w / 2
+	"ne": {
+		"position": "absolute",
+		"width": "10px",
+		"height": "10px",
+		"z-index": 1,
+		"top": "-5px",
+		"right": "-5px",
+		"bottom": "auto",
+		"left": "auto"
 	},
-	'n,s': {
-		'left, right': 0,
-		'height': w
+	"sw": {
+		"position": "absolute",
+		"width": "10px",
+		"height": "10px",
+		"z-index": 1,
+		"bottom": "-5px",
+		"left": "-5px",
+		"top": "auto",
+		"right": "auto"
 	},
-	'nw,ne,sw,se': {
-		'width': w,
-		'height': w,
-		'z-index': 1
-	},
-	'nw': {
-		'top, left': -w / 2,
-		'bottom, right': 'auto'
-	},
-	'ne': {
-		'top, right': -w / 2,
-		'bottom, left': 'auto'
-	},
-	'sw': {
-		'bottom, left': -w / 2,
-		'top, right': 'auto'
-	},
-	'se': {
-		'bottom, right': -w / 2,
-		'top, left': 'auto'
+	"se": {
+		"position": "absolute",
+		"width": "10px",
+		"height": "10px",
+		"z-index": 1,
+		"bottom": "-5px",
+		"right": "-5px",
+		"top": "auto",
+		"left": "auto"
 	}
-}, true);
-
+}
 
 function clamp(value, min, max) {
 	return Math.max(min, Math.min(value, max));
