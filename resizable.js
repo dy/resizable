@@ -1,24 +1,15 @@
-/**
- * @module  resizable
- */
-
-
-var Draggable = require('draggy');
-var emit = require('emmy/emit');
-var on = require('emmy/on');
-var isArray = require('mutype/is-array');
-var isString = require('mutype/is-string');
-var isObject = require('mutype/is-object');
-var extend = require('xtend/mutable');
-var inherit = require('inherits');
-var Emitter = require('events');
-var between = require('mumath/clamp');
-var splitKeys = require('split-keys');
-var css = require('mucss/css');
-var paddings = require('mucss/padding');
-var borders = require('mucss/border');
-var margins = require('mucss/margin');
-var offsets = require('mucss/offset');
+import Draggable from 'draggy';
+import emit from 'emmy/emit';
+import isArray from 'mutype/is-array';
+import isString from 'mutype/is-string';
+import isObject from 'mutype/is-object';
+import between from 'mumath/clamp';
+import splitKeys from 'split-keys';
+import css from 'mucss/css';
+import paddings from 'mucss/padding';
+import borders from 'mucss/border';
+import margins from 'mucss/margin';
+import offsets from 'mucss/offset';
 
 
 var doc = document, win = window, root = doc.documentElement;
@@ -32,7 +23,7 @@ var doc = document, win = window, root = doc.documentElement;
  *
  * @constructor
  */
-function Resizable (el, options) {
+function Resizable(el, options) {
 	var self = this;
 
 	if (!(self instanceof Resizable)) {
@@ -41,7 +32,7 @@ function Resizable (el, options) {
 
 	self.element = el;
 
-	extend(self, options);
+	Object.assign(self, options);
 
 	//if element isn’t draggable yet - force it to be draggable, without movements
 	if (self.draggable === true) {
@@ -66,9 +57,6 @@ function Resizable (el, options) {
 	}
 }
 
-inherit(Resizable, Emitter);
-
-
 var proto = Resizable.prototype;
 
 
@@ -91,14 +79,14 @@ proto.createHandles = function () {
 	//parse value
 	if (isArray(self.handles)) {
 		handles = {};
-		for (var i = self.handles.length; i--;){
+		for (var i = self.handles.length; i--;) {
 			handles[self.handles[i]] = null;
 		}
 	}
 	else if (isString(self.handles)) {
 		handles = {};
 		var arr = self.handles.match(/([swne]+)/g);
-		for (var i = arr.length; i--;){
+		for (var i = arr.length; i--;) {
 			handles[arr[i]] = null;
 		}
 	}
@@ -111,7 +99,7 @@ proto.createHandles = function () {
 		var display = getComputedStyle(self.element).display;
 		//if display is inline-like - provide only three handles
 		//it is position: static or display: inline
-		if (/inline/.test(display) || /static/.test(position)){
+		if (/inline/.test(display) || /static/.test(position)) {
 			handles = {
 				s: null,
 				se: null,
@@ -148,7 +136,7 @@ proto.createHandles = function () {
 
 
 /** Create handle for the direction */
-proto.createHandle = function(handle, direction){
+proto.createHandle = function (handle, direction) {
 	var self = this;
 
 	var el = self.element;
@@ -218,7 +206,7 @@ proto.createHandle = function(handle, direction){
 		self.shiftOffset = [0, 0];
 
 		//central initial coords
-		self.center = [self.offsets[0] + self.initSize[0]/2, self.offsets[1] + self.initSize[1]/2];
+		self.center = [self.offsets[0] + self.initSize[0] / 2, self.offsets[1] + self.initSize[1] / 2];
 
 		//calc limits (max height/width from left/right)
 		if (self.within) {
@@ -240,7 +228,7 @@ proto.createHandle = function(handle, direction){
 		});
 
 		//clear cursors
-		for (var h in self.handles){
+		for (var h in self.handles) {
 			css(self.handles[h], 'cursor', null);
 		}
 
@@ -285,12 +273,12 @@ proto.createHandle = function(handle, direction){
 			//set placement is relative to initial center line
 			css(el, {
 				width: Math.min(
-					self.initSize[0] + coords[0]*2,
+					self.initSize[0] + coords[0] * 2,
 					self.maxSize[2] + coords[0],
 					self.maxSize[0] + coords[0]
 				),
 				height: Math.min(
-					self.initSize[1] + coords[1]*2,
+					self.initSize[1] + coords[1] * 2,
 					self.maxSize[3] + coords[1],
 					self.maxSize[1] + coords[1]
 				)
@@ -303,11 +291,11 @@ proto.createHandle = function(handle, direction){
 			self.draggable.updateLimits();
 
 			if (difX) {
-				self.draggable.move(self.center[0] - self.initSize[0]/2 - coords[0]);
+				self.draggable.move(self.center[0] - self.initSize[0] / 2 - coords[0]);
 			}
 
 			if (difY) {
-				self.draggable.move(null, self.center[1] - self.initSize[1]/2 - coords[1]);
+				self.draggable.move(null, self.center[1] - self.initSize[1] / 2 - coords[1]);
 			}
 		}
 		else {
@@ -345,8 +333,8 @@ proto.createHandle = function(handle, direction){
 					self.draggable.updateLimits();
 
 					self.draggable.move(
-						self.center[0] - self.initSize[0]/2,
-						self.center[1] - self.initSize[1]/2
+						self.center[0] - self.initSize[0] / 2,
+						self.center[1] - self.initSize[1] / 2
 					);
 
 					break;
@@ -409,17 +397,17 @@ proto.createHandle = function(handle, direction){
 		emit(self, 'resize');
 		emit(el, 'resize');
 
-		draggy.setCoords(0,0);
+		draggy.setCoords(0, 0);
 	});
 
-	draggy.on('dragend', function(){
+	draggy.on('dragend', function () {
 		//clear cursor & pointer-events
 		css(root, {
 			'cursor': null
 		});
 
 		//get back cursors
-		for (var h in self.handles){
+		for (var h in self.handles) {
 			css(self.handles[h], 'cursor', self.handles[h].direction + '-resize');
 		}
 
@@ -442,7 +430,7 @@ proto.createHandle = function(handle, direction){
 /** deconstructor - removes any memory bindings */
 proto.destroy = function () {
 	//remove all handles
-	for (var hName in this.handles){
+	for (var hName in this.handles) {
 		this.element.removeChild(this.handles[hName]);
 		Draggable.cache.get(this.handles[hName]).destroy();
 	}
@@ -464,24 +452,24 @@ var handleStyles = splitKeys({
 		'position': 'absolute'
 	},
 	'e,w': {
-		'top, bottom':0,
+		'top, bottom': 0,
 		'width': w
 	},
 	'e': {
 		'left': 'auto',
-		'right': -w/2
+		'right': -w / 2
 	},
 	'w': {
 		'right': 'auto',
-		'left': -w/2
+		'left': -w / 2
 	},
 	's': {
 		'top': 'auto',
-		'bottom': -w/2
+		'bottom': -w / 2
 	},
 	'n': {
 		'bottom': 'auto',
-		'top': -w/2
+		'top': -w / 2
 	},
 	'n,s': {
 		'left, right': 0,
@@ -493,26 +481,22 @@ var handleStyles = splitKeys({
 		'z-index': 1
 	},
 	'nw': {
-		'top, left': -w/2,
+		'top, left': -w / 2,
 		'bottom, right': 'auto'
 	},
 	'ne': {
-		'top, right': -w/2,
+		'top, right': -w / 2,
 		'bottom, left': 'auto'
 	},
 	'sw': {
-		'bottom, left': -w/2,
+		'bottom, left': -w / 2,
 		'top, right': 'auto'
 	},
 	'se': {
-		'bottom, right': -w/2,
+		'bottom, right': -w / 2,
 		'top, left': 'auto'
 	}
 }, true);
 
 
-
-/**
- * @module resizable
- */
-module.exports = Resizable;
+export default Resizable

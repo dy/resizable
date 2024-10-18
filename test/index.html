@@ -2,19 +2,17 @@
 
 <meta charset="utf-8">
 
-<script src="bundle.js"></script>
-
 <link rel="stylesheet" type="text/css" href="./index.css">
 
+<script type="importmap">
+	{
+		"imports": {
+			"tst": "../node_modules/tst/tst.js",
+			"resizable": "../resizable.min.js",
+			"hyperf": "../node_modules/hyperf/hyperf.min.js",
+			"draggy": "../node_modules/draggy/draggy.min.js"
+		}
+	}
+</script>
 
-<link rel="stylesheet" type="text/css" href="mocha.css"/>
-<div id="mocha"></div>
-<script src="mocha.js"></script>
-<script>
-	mocha.setup('bdd');
-</script>
-<script src="index.js"></script>
-<script>
-	mocha.checkLeaks();
-	mocha.run();
-</script>
+<script src="index.js" type="module"></script>

@@ -6,12 +6,9 @@ Resizable behaviour for elements. [Demo](https://dy.github.io/resizable).
 
 
 ```js
-var Resizable = require('resizable');
+import Resizable from 'resizable';
 
-var el = document.querySelector('.my-element');
-
-
-var resizable = new Resizable(el, {
+var resizable = new Resizable(document.querySelector('.my-element'), {
 	within: 'parent',
 	handles: 's, se, e',
 	threshold: 10,
@@ -45,3 +42,9 @@ resize will default to all handles being enabled.
 | `resizestart` | Element resize started. Called on self. |
 | `resize` | Element resized. Called on self. |
 | `resizeend` | Element resize ended. Called on self. |
+
+## License
+
+MIT
+
+<p align=center><a href="https://github.com/krishnized/license/">🕉</a></p>
