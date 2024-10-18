@@ -1,6 +1,6 @@
 {
   "name": "resizable",
-  "version": "1.2.1",
+  "version": "2.0.0",
   "description": "Resizable behaviour for elements",
   "main": "resizable.js",
   "module": "resizable.js",
