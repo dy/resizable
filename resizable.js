@@ -1,9 +1,5 @@
 import Draggable from 'draggy';
 import emit from 'emmy/emit';
-import isArray from 'mutype/is-array';
-import isString from 'mutype/is-string';
-import isObject from 'mutype/is-object';
-import between from 'mumath/clamp';
 import splitKeys from 'split-keys';
 import css from 'mucss/css';
 import paddings from 'mucss/padding';
@@ -12,7 +8,7 @@ import margins from 'mucss/margin';
 import offsets from 'mucss/offset';
 
 
-var doc = document, win = window, root = doc.documentElement;
+var doc = document, root = doc.documentElement;
 
 
 /**
@@ -77,20 +73,20 @@ proto.createHandles = function () {
 	var handles;
 
 	//parse value
-	if (isArray(self.handles)) {
+	if (Array.isArray(self.handles)) {
 		handles = {};
 		for (var i = self.handles.length; i--;) {
 			handles[self.handles[i]] = null;
 		}
 	}
-	else if (isString(self.handles)) {
+	else if (typeof self.handles === 'string') {
 		handles = {};
 		var arr = self.handles.match(/([swne]+)/g);
 		for (var i = arr.length; i--;) {
 			handles[arr[i]] = null;
 		}
 	}
-	else if (isObject(self.handles)) {
+	else if (typeof self.handles === 'object' && self.handles.constructor === Object) {
 		handles = self.handles;
 	}
 	//default set of handles depends on position.
@@ -341,16 +337,16 @@ proto.createHandle = function (handle, direction) {
 
 				case 'nw':
 					css(el, {
-						width: between(self.initSize[0] - coords[0], 0, self.maxSize[0]),
-						height: between(self.initSize[1] - coords[1], 0, self.maxSize[1])
+						width: clamp(self.initSize[0] - coords[0], 0, self.maxSize[0]),
+						height: clamp(self.initSize[1] - coords[1], 0, self.maxSize[1])
 					});
 				case 'n':
 					css(el, {
-						height: between(self.initSize[1] - coords[1], 0, self.maxSize[1])
+						height: clamp(self.initSize[1] - coords[1], 0, self.maxSize[1])
 					});
 				case 'w':
 					css(el, {
-						width: between(self.initSize[0] - coords[0], 0, self.maxSize[0])
+						width: clamp(self.initSize[0] - coords[0], 0, self.maxSize[0])
 					});
 				case 'nw':
 				case 'n':
@@ -366,8 +362,8 @@ proto.createHandle = function (handle, direction) {
 
 				case 'ne':
 					css(el, {
-						width: between(self.initSize[0] + coords[0], 0, self.maxSize[2]),
-						height: between(self.initSize[1] - coords[1], 0, self.maxSize[1])
+						width: clamp(self.initSize[0] + coords[0], 0, self.maxSize[2]),
+						height: clamp(self.initSize[1] - coords[1], 0, self.maxSize[1])
 					});
 
 					self.draggable.updateLimits();
@@ -379,8 +375,8 @@ proto.createHandle = function (handle, direction) {
 					break;
 				case 'sw':
 					css(el, {
-						width: between(self.initSize[0] - coords[0], 0, self.maxSize[0]),
-						height: between(self.initSize[1] + coords[1], 0, self.maxSize[3])
+						width: clamp(self.initSize[0] - coords[0], 0, self.maxSize[0]),
+						height: clamp(self.initSize[1] + coords[1], 0, self.maxSize[3])
 					});
 
 					self.draggable.updateLimits();
@@ -498,5 +494,9 @@ var handleStyles = splitKeys({
 	}
 }, true);
 
+
+function clamp(value, min, max) {
+	return Math.max(min, Math.min(value, max));
+}
 
 export default Resizable
