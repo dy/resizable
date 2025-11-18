@@ -31,6 +31,17 @@ function Resizable(el, options) {
 
 	Object.assign(self, options);
 
+	// Restore inline styles from configured storage if enabled
+	try {
+		const persist = (typeof self.persist === 'boolean') ? (self.persist ? 'session' : false) : self.persist;
+
+		if (persist && self.persistKey) {
+			const storage = (persist === 'local') ? localStorage : sessionStorage;
+			const saved = storage.getItem(self.persistKey);
+			if (saved) self.element.style.cssText = saved;
+		}
+	} catch (_) {}
+
 	//if element isn’t draggable yet - force it to be draggable, without movements
 	if (self.draggable === true) {
 		self.draggable = new Draggable(self.element, {
@@ -63,6 +74,12 @@ proto.css3 = true;
 
 /** Make itself draggable to the row */
 proto.draggable = false;
+
+/** Persist option: 'session' (default) or 'local', or boolean (true -> 'session', false -> no-persist) */
+proto.persist = 'session';
+
+/** Persist storage key (string) */
+proto.persistKey = null;
 
 // events
 proto.on = function (event, callback) { on(this, event, callback) }
@@ -414,6 +431,15 @@ proto.createHandle = function (handle, direction) {
 		//trigger callbacks
 		emit(self, 'resizeend');
 		emit(el, 'resizeend');
+
+		// persist inline styles if persist is configured
+		try {
+			const persist = (typeof self.persist === 'boolean') ? (self.persist ? 'session' : false) : self.persist;
+			if (persist && self.persistKey) {
+				const storage = (persist === 'local') ? localStorage : sessionStorage;
+				storage.setItem(self.persistKey, self.element.style.cssText);
+			}
+		} catch (_) {}
 	});
 
 	//append styles
@@ -525,5 +551,19 @@ var handleStyles = {
 function clamp(value, min, max) {
 	return Math.max(min, Math.min(value, max));
 }
+
+/** Save current inline style to configured storage (session/local) under `persistKey` */
+proto.savePersistedStyle = function () {
+	if (!this.element) return;
+	try {
+		const persist = (typeof this.persist === 'boolean') ? (this.persist ? 'session' : false) : this.persist;
+		if (persist && this.persistKey) {
+			const storage = (persist === 'local') ? localStorage : sessionStorage;
+			storage.setItem(this.persistKey, this.element.style.cssText);
+		}
+	} catch (_) {}
+};
+
+// (no backward-compat alias) - use `savePersistedStyle()` instead
 
 export default Resizable
