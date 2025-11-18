@@ -2,7 +2,7 @@
 
 Resizable behaviour for elements. [Demo](https://dy.github.io/resizable).
 
-[![npm install resizable](https://nodei.co/npm/resizable.png?mini=true)](https://nodei.co/npm/resizable/)
+[![npm install resizable](https://nodei.co/npm/resizable.png?mini=true)](https://npmjs.org/resizable/)
 
 
 ```js
