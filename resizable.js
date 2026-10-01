@@ -1,529 +1,236 @@
-import Draggable from 'draggy';
-import emit from 'emmy/emit';
-import on from 'emmy/on';
-import off from 'emmy/off';
-import css from 'mucss/css';
-import paddings from 'mucss/padding';
-import borders from 'mucss/border';
-import margins from 'mucss/margin';
-import offsets from 'mucss/offset';
+const DIRECTIONS = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']
+const CURSORS = { n: 'ns', s: 'ns', e: 'ew', w: 'ew', ne: 'nesw', sw: 'nesw', nw: 'nwse', se: 'nwse' }
 
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max)
+const number = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback
 
-var doc = document, root = doc.documentElement;
+/** A tiny, dependency-free resizer for DOM elements. */
+export default class Resizable extends EventTarget {
+  constructor(element, options = {}) {
+    super()
+    if (!(element instanceof Element)) throw new TypeError('Resizable needs a DOM element')
 
+    this.element = element
+    this.options = {
+      handles: DIRECTIONS,
+      within: null,
+      threshold: 0,
+      aspectRatio: false,
+      draggable: false,
+      ...options
+    }
+    this.handles = {}
+    this._cleanups = []
+    this._generated = []
+    this._positionChanged = false
 
-/**
- * Make an element resizable.
- *
- * Note that we don’t need a container option
- * as arbitrary container is emulatable via fake resizable.
- *
- * @constructor
- */
-function Resizable(el, options) {
-	var self = this;
+    if (getComputedStyle(element).position === 'static') {
+      element.style.position = 'relative'
+      this._positionChanged = true
+    }
 
-	if (!(self instanceof Resizable)) {
-		return new Resizable(el, options);
-	}
+    this._createHandles()
+    if (this.options.draggable) this._makeDraggable()
+    if (typeof this.options.resize === 'function') this.on('resize', this.options.resize)
+  }
 
-	self.element = el;
+  on(type, listener, options) {
+    this.addEventListener(type, listener, options)
+    return this
+  }
 
-	Object.assign(self, options);
+  off(type, listener, options) {
+    this.removeEventListener(type, listener, options)
+    return this
+  }
 
-	//if element isn’t draggable yet - force it to be draggable, without movements
-	if (self.draggable === true) {
-		self.draggable = new Draggable(self.element, {
-			within: self.within,
-			css3: self.css3
-		});
-	} else if (self.draggable) {
-		self.draggable = new Draggable(self.element, self.draggable);
-		self.draggable.css3 = self.css3;
-	} else {
-		self.draggable = new Draggable(self.element, {
-			handle: null
-		});
-	}
+  destroy() {
+    this._cleanups.splice(0).forEach((cleanup) => cleanup())
+    this._generated.splice(0).forEach((handle) => handle.remove())
+    if (this._positionChanged) this.element.style.removeProperty('position')
+    this.handles = {}
+  }
 
-	self.createHandles();
+  _createHandles() {
+    const configured = this.options.handles
+    const entries = typeof configured === 'string'
+      ? configured.split(/[\s,]+/).filter(Boolean).map((name) => [name, null])
+      : Array.isArray(configured)
+        ? configured.map((name) => [name, null])
+        : Object.entries(configured || {})
 
-	//bind event, if any
-	if (self.resize) {
-		self.on('resize', self.resize);
-	}
+    for (const [direction, suppliedHandle] of entries) {
+      if (!DIRECTIONS.includes(direction)) throw new TypeError(`Unknown resize handle: ${direction}`)
+      const handle = suppliedHandle || document.createElement('div')
+      if (!suppliedHandle) this._generated.push(handle)
+      handle.classList.add('resizable-handle', `resizable-handle-${direction}`)
+      handle.dataset.direction = direction
+      handle.setAttribute('role', 'separator')
+      handle.setAttribute('aria-label', `Resize ${direction}`)
+      handle.tabIndex = 0
+      Object.assign(handle.style, handleStyle(direction))
+      this.element.append(handle)
+      this.handles[direction] = handle
+
+      const pointerdown = (event) => this._startResize(event, direction, handle)
+      const keydown = (event) => this._keyboardResize(event, direction)
+      handle.addEventListener('pointerdown', pointerdown)
+      handle.addEventListener('keydown', keydown)
+      this._cleanups.push(() => {
+        handle.removeEventListener('pointerdown', pointerdown)
+        handle.removeEventListener('keydown', keydown)
+      })
+    }
+  }
+
+  _startResize(event, direction, handle) {
+    if (event.button !== 0 || this._active) return
+    event.preventDefault()
+    event.stopPropagation()
+    const start = this._snapshot(event)
+    let started = false
+    this._active = true
+    handle.setPointerCapture?.(event.pointerId)
+
+    const move = (nextEvent) => {
+      const dx = nextEvent.clientX - start.x
+      const dy = nextEvent.clientY - start.y
+      if (!started && Math.hypot(dx, dy) < number(this.options.threshold, 0)) return
+      if (!started) {
+        started = true
+        this._emit('resizestart', this._detail(direction))
+      }
+      this._applyResize(start, direction, dx, dy, nextEvent.shiftKey)
+      this._emit('resize', this._detail(direction))
+    }
+    const end = () => {
+      handle.removeEventListener('pointermove', move)
+      handle.removeEventListener('pointerup', end)
+      handle.removeEventListener('pointercancel', end)
+      this._active = false
+      if (started) this._emit('resizeend', this._detail(direction))
+    }
+    handle.addEventListener('pointermove', move)
+    handle.addEventListener('pointerup', end)
+    handle.addEventListener('pointercancel', end)
+  }
+
+  _snapshot(event) {
+    const rect = this.element.getBoundingClientRect()
+    const style = getComputedStyle(this.element)
+    const container = this.options.within === 'parent' ? this.element.parentElement : this.options.within
+    return {
+      x: event.clientX,
+      y: event.clientY,
+      width: rect.width,
+      height: rect.height,
+      left: Number.parseFloat(style.left) || 0,
+      top: Number.parseFloat(style.top) || 0,
+      rect,
+      bounds: container instanceof Element ? container.getBoundingClientRect() : null,
+      minWidth: Number.parseFloat(style.minWidth) || 0,
+      minHeight: Number.parseFloat(style.minHeight) || 0,
+      maxWidth: Number.parseFloat(style.maxWidth) || Infinity,
+      maxHeight: Number.parseFloat(style.maxHeight) || Infinity,
+      borderX: style.boxSizing === 'border-box' ? 0 : Number.parseFloat(style.paddingLeft) + Number.parseFloat(style.paddingRight) + Number.parseFloat(style.borderLeftWidth) + Number.parseFloat(style.borderRightWidth),
+      borderY: style.boxSizing === 'border-box' ? 0 : Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom) + Number.parseFloat(style.borderTopWidth) + Number.parseFloat(style.borderBottomWidth)
+    }
+  }
+
+  _applyResize(start, direction, dx, dy, shiftKey = false) {
+    const west = direction.includes('w')
+    const north = direction.includes('n')
+    const horizontal = /e|w/.test(direction)
+    const vertical = /n|s/.test(direction)
+    let width = start.width + (horizontal ? (west ? -dx : dx) : 0)
+    let height = start.height + (vertical ? (north ? -dy : dy) : 0)
+
+    const ratioOption = this.options.aspectRatio
+    const ratio = ratioOption === true || shiftKey ? start.width / start.height : number(ratioOption, 0)
+    if (ratio && horizontal && vertical) {
+      if (Math.abs(dx) > Math.abs(dy)) height = width / ratio
+      else width = height * ratio
+    }
+
+    let maxWidth = start.maxWidth
+    let maxHeight = start.maxHeight
+    if (start.bounds) {
+      maxWidth = Math.min(maxWidth, west ? start.rect.right - start.bounds.left : start.bounds.right - start.rect.left)
+      maxHeight = Math.min(maxHeight, north ? start.rect.bottom - start.bounds.top : start.bounds.bottom - start.rect.top)
+    }
+    width = clamp(width, start.minWidth, maxWidth)
+    height = clamp(height, start.minHeight, maxHeight)
+
+    if (horizontal) this.element.style.width = `${Math.max(0, width - start.borderX)}px`
+    if (vertical) this.element.style.height = `${Math.max(0, height - start.borderY)}px`
+    if (west) this.element.style.left = `${start.left + start.width - width}px`
+    if (north) this.element.style.top = `${start.top + start.height - height}px`
+  }
+
+  _keyboardResize(event, direction) {
+    const delta = event.shiftKey ? 10 : 1
+    const movement = { ArrowLeft: [-delta, 0], ArrowRight: [delta, 0], ArrowUp: [0, -delta], ArrowDown: [0, delta] }[event.key]
+    if (!movement) return
+    event.preventDefault()
+    const start = this._snapshot({ clientX: 0, clientY: 0 })
+    this._emit('resizestart', this._detail(direction))
+    this._applyResize(start, direction, ...movement)
+    this._emit('resize', this._detail(direction))
+    this._emit('resizeend', this._detail(direction))
+  }
+
+  _makeDraggable() {
+    const down = (event) => {
+      if (event.button !== 0 || event.target.closest('.resizable-handle')) return
+      const start = this._snapshot(event)
+      const move = (nextEvent) => {
+        let left = start.left + nextEvent.clientX - start.x
+        let top = start.top + nextEvent.clientY - start.y
+        if (start.bounds) {
+          left += clamp(start.rect.left + nextEvent.clientX - start.x, start.bounds.left, start.bounds.right - start.width) - (start.rect.left + nextEvent.clientX - start.x)
+          top += clamp(start.rect.top + nextEvent.clientY - start.y, start.bounds.top, start.bounds.bottom - start.height) - (start.rect.top + nextEvent.clientY - start.y)
+        }
+        this.element.style.left = `${left}px`
+        this.element.style.top = `${top}px`
+      }
+      const up = () => {
+        this.element.removeEventListener('pointermove', move)
+        this.element.removeEventListener('pointerup', up)
+      }
+      this.element.setPointerCapture?.(event.pointerId)
+      this.element.addEventListener('pointermove', move)
+      this.element.addEventListener('pointerup', up)
+    }
+    this.element.addEventListener('pointerdown', down)
+    this._cleanups.push(() => this.element.removeEventListener('pointerdown', down))
+  }
+
+  _detail(direction) {
+    const { width, height, left, top } = this.element.getBoundingClientRect()
+    return { direction, width, height, left, top }
+  }
+
+  _emit(type, detail) {
+    this.dispatchEvent(new CustomEvent(type, { detail }))
+    this.element.dispatchEvent(new CustomEvent(type, { detail, bubbles: true }))
+  }
 }
 
-var proto = Resizable.prototype;
-
-
-/** Use css3 for draggable, if any */
-proto.css3 = true;
-
-
-/** Make itself draggable to the row */
-proto.draggable = false;
-
-// events
-proto.on = function (event, callback) { on(this, event, callback) }
-proto.off = function (event, callback) { off(this, event, callback) }
-
-
-/** Create handles according to options */
-proto.createHandles = function () {
-	var self = this;
-
-	//init handles
-	var handles;
-
-	//parse value
-	if (Array.isArray(self.handles)) {
-		handles = {};
-		for (var i = self.handles.length; i--;) {
-			handles[self.handles[i]] = null;
-		}
-	}
-	else if (typeof self.handles === 'string') {
-		handles = {};
-		var arr = self.handles.match(/([swne]+)/g);
-		for (var i = arr.length; i--;) {
-			handles[arr[i]] = null;
-		}
-	}
-	else if (typeof self.handles === 'object' && self.handles.constructor === Object) {
-		handles = self.handles;
-	}
-	//default set of handles depends on position.
-	else {
-		var position = getComputedStyle(self.element).position;
-		var display = getComputedStyle(self.element).display;
-		//if display is inline-like - provide only three handles
-		//it is position: static or display: inline
-		if (/inline/.test(display) || /static/.test(position)) {
-			handles = {
-				s: null,
-				se: null,
-				e: null
-			};
-
-			//ensure position is not static
-			css(self.element, 'position', 'relative');
-		}
-		//else - all handles
-		else {
-			handles = {
-				s: null,
-				se: null,
-				e: null,
-				ne: null,
-				n: null,
-				nw: null,
-				w: null,
-				sw: null
-			};
-		}
-	}
-
-	//create proper number of handles
-	var handle;
-	for (var direction in handles) {
-		handles[direction] = self.createHandle(handles[direction], direction);
-	}
-
-	//save handles elements
-	self.handles = handles;
+function handleStyle(direction) {
+  const corner = direction.length === 2
+  return {
+    position: 'absolute',
+    zIndex: '1',
+    touchAction: 'none',
+    userSelect: 'none',
+    cursor: `${CURSORS[direction]}-resize`,
+    width: corner || /e|w/.test(direction) ? '12px' : 'auto',
+    height: corner || /n|s/.test(direction) ? '12px' : 'auto',
+    top: direction.includes('n') ? '-6px' : direction.includes('s') ? 'auto' : '0',
+    bottom: direction.includes('s') ? '-6px' : direction.includes('n') ? 'auto' : '0',
+    left: direction.includes('w') ? '-6px' : direction.includes('e') ? 'auto' : '0',
+    right: direction.includes('e') ? '-6px' : direction.includes('w') ? 'auto' : '0'
+  }
 }
 
-
-/** Create handle for the direction */
-proto.createHandle = function (handle, direction) {
-	var self = this;
-
-	var el = self.element;
-
-	//make handle element
-	if (!handle) {
-		handle = document.createElement('div');
-		handle.classList.add('resizable-handle');
-	}
-
-	//insert handle to the element
-	self.element.appendChild(handle);
-
-	//save direction
-	handle.direction = direction;
-
-	//detect self.within
-	//FIXME: may be painful if resizable is created on detached element
-	var within = self.within === 'parent' ? self.element.parentNode : self.within;
-
-	//make handle draggable
-	var draggy = new Draggable(handle, {
-		within: within,
-		//can’t use abs pos, as we engage it in styling
-		// css3: false,
-		threshold: self.threshold,
-		axis: /^[ns]$/.test(direction) ? 'y' : /^[we]$/.test(direction) ? 'x' : 'both'
-	});
-
-	draggy.on('dragstart', function (e) {
-		self.m = margins(el);
-		self.b = borders(el);
-		self.p = paddings(el);
-
-		//update draggalbe params
-		self.draggable.update(e);
-
-		//save initial dragging offsets
-		var s = getComputedStyle(el);
-		self.offsets = self.draggable.getCoords();
-
-		//recalc border-box
-		if (getComputedStyle(el).boxSizing === 'border-box') {
-			self.p.top = 0;
-			self.p.bottom = 0;
-			self.p.left = 0;
-			self.p.right = 0;
-			self.b.top = 0;
-			self.b.bottom = 0;
-			self.b.left = 0;
-			self.b.right = 0;
-		}
-
-		//save initial size
-		self.initSize = [el.offsetWidth - self.b.left - self.b.right - self.p.left - self.p.right, el.offsetHeight - self.b.top - self.b.bottom - self.p.top - self.p.bottom];
-
-		//save initial full size
-		self.initSizeFull = [
-			el.offsetWidth,
-			el.offsetHeight
-		];
-
-		//movement prev coords
-		self.prevCoords = [0, 0];
-
-		//shift-caused offset
-		self.shiftOffset = [0, 0];
-
-		//central initial coords
-		self.center = [self.offsets[0] + self.initSize[0] / 2, self.offsets[1] + self.initSize[1] / 2];
-
-		//calc limits (max height/width from left/right)
-		if (self.within) {
-			var po = offsets(within);
-			var o = offsets(el);
-			self.maxSize = [
-				o.left - po.left + self.initSize[0],
-				o.top - po.top + self.initSize[1],
-				po.right - o.right + self.initSize[0],
-				po.bottom - o.bottom + self.initSize[1]
-			];
-		} else {
-			self.maxSize = [9999, 9999, 9999, 9999];
-		}
-
-		//preset mouse cursor
-		css(root, {
-			'cursor': direction + '-resize'
-		});
-
-		//clear cursors
-		for (var h in self.handles) {
-			css(self.handles[h], 'cursor', null);
-		}
-
-		//trigger callbacks
-		emit(self, 'resizestart');
-		emit(el, 'resizestart');
-	});
-
-	draggy.on('drag', function () {
-		var coords = draggy.getCoords();
-
-		var prevSize = [
-			el.offsetWidth,
-			el.offsetHeight
-		];
-
-		//change width/height properly
-		if (draggy.shiftKey) {
-			switch (direction) {
-				case 'se':
-				case 's':
-				case 'e':
-					break;
-				case 'nw':
-					coords[0] = -coords[0];
-					coords[1] = -coords[1];
-					break;
-				case 'n':
-					coords[1] = -coords[1];
-					break;
-				case 'w':
-					coords[0] = -coords[0];
-					break;
-				case 'ne':
-					coords[1] = -coords[1];
-					break;
-				case 'sw':
-					coords[0] = -coords[0];
-					break;
-			};
-
-			//set placement is relative to initial center line
-			css(el, {
-				width: Math.min(
-					self.initSize[0] + coords[0] * 2,
-					self.maxSize[2] + coords[0],
-					self.maxSize[0] + coords[0]
-				),
-				height: Math.min(
-					self.initSize[1] + coords[1] * 2,
-					self.maxSize[3] + coords[1],
-					self.maxSize[1] + coords[1]
-				)
-			});
-
-			var difX = prevSize[0] - el.offsetWidth;
-			var difY = prevSize[1] - el.offsetHeight;
-
-			//update draggable limits
-			self.draggable.updateLimits();
-
-			if (difX) {
-				self.draggable.move(self.center[0] - self.initSize[0] / 2 - coords[0]);
-			}
-
-			if (difY) {
-				self.draggable.move(null, self.center[1] - self.initSize[1] / 2 - coords[1]);
-			}
-		}
-		else {
-			switch (direction) {
-				case 'se':
-					css(el, {
-						width: Math.min(
-							self.initSize[0] + coords[0],
-							self.maxSize[2]
-						),
-						height: Math.min(
-							self.initSize[1] + coords[1],
-							self.maxSize[3]
-						)
-					});
-
-				case 's':
-					css(el, {
-						height: Math.min(
-							self.initSize[1] + coords[1],
-							self.maxSize[3]
-						)
-					});
-
-				case 'e':
-					css(el, {
-						width: Math.min(
-							self.initSize[0] + coords[0],
-							self.maxSize[2]
-						)
-					});
-				case 'se':
-				case 's':
-				case 'e':
-					self.draggable.updateLimits();
-
-					self.draggable.move(
-						self.center[0] - self.initSize[0] / 2,
-						self.center[1] - self.initSize[1] / 2
-					);
-
-					break;
-
-				case 'nw':
-					css(el, {
-						width: clamp(self.initSize[0] - coords[0], 0, self.maxSize[0]),
-						height: clamp(self.initSize[1] - coords[1], 0, self.maxSize[1])
-					});
-				case 'n':
-					css(el, {
-						height: clamp(self.initSize[1] - coords[1], 0, self.maxSize[1])
-					});
-				case 'w':
-					css(el, {
-						width: clamp(self.initSize[0] - coords[0], 0, self.maxSize[0])
-					});
-				case 'nw':
-				case 'n':
-				case 'w':
-					self.draggable.updateLimits();
-
-					//subtract t/l on changed size
-					var deltaX = self.initSizeFull[0] - el.offsetWidth;
-					var deltaY = self.initSizeFull[1] - el.offsetHeight;
-
-					self.draggable.move(self.offsets[0] + deltaX, self.offsets[1] + deltaY);
-					break;
-
-				case 'ne':
-					css(el, {
-						width: clamp(self.initSize[0] + coords[0], 0, self.maxSize[2]),
-						height: clamp(self.initSize[1] - coords[1], 0, self.maxSize[1])
-					});
-
-					self.draggable.updateLimits();
-
-					//subtract t/l on changed size
-					var deltaY = self.initSizeFull[1] - el.offsetHeight;
-
-					self.draggable.move(null, self.offsets[1] + deltaY);
-					break;
-				case 'sw':
-					css(el, {
-						width: clamp(self.initSize[0] - coords[0], 0, self.maxSize[0]),
-						height: clamp(self.initSize[1] + coords[1], 0, self.maxSize[3])
-					});
-
-					self.draggable.updateLimits();
-
-					//subtract t/l on changed size
-					var deltaX = self.initSizeFull[0] - el.offsetWidth;
-
-					self.draggable.move(self.offsets[0] + deltaX);
-					break;
-			};
-		}
-
-		//trigger callbacks
-		emit(self, 'resize');
-		emit(el, 'resize');
-
-		draggy.setCoords(0, 0);
-	});
-
-	draggy.on('dragend', function () {
-		//clear cursor & pointer-events
-		css(root, {
-			'cursor': null
-		});
-
-		//get back cursors
-		for (var h in self.handles) {
-			css(self.handles[h], 'cursor', self.handles[h].direction + '-resize');
-		}
-
-		//trigger callbacks
-		emit(self, 'resizeend');
-		emit(el, 'resizeend');
-	});
-
-	//append styles
-	css(handle, handleStyles[direction]);
-	css(handle, 'cursor', direction + '-resize');
-
-	//append proper class
-	handle.classList.add('resizable-handle-' + direction);
-
-	return handle;
-};
-
-
-/** deconstructor - removes any memory bindings */
-proto.destroy = function () {
-	//remove all handles
-	for (var hName in this.handles) {
-		this.element.removeChild(this.handles[hName]);
-		Draggable.cache.get(this.handles[hName]).destroy();
-	}
-
-
-	//remove references
-	this.element = null;
-};
-
-
-var w = 10;
-
-/** Threshold size */
-proto.threshold = w;
-
-/** Styles for handles */
-var handleStyles = {
-	"e": {
-		"left": "auto",
-		"right": "-5px",
-		"position": "absolute",
-		"width": "10px",
-		"top": "0px",
-		"bottom": "0px"
-	},
-	"w": {
-		"right": "auto",
-		"left": "-5px",
-		"position": "absolute",
-		"width": "10px",
-		"top": "0px",
-		"bottom": "0px"
-	},
-	"s": {
-		"top": "auto",
-		"bottom": "-5px",
-		"position": "absolute",
-		"height": "10px",
-		"left": "0px",
-		"right": "0px"
-	},
-	"n": {
-		"bottom": "auto",
-		"top": "-5px",
-		"position": "absolute",
-		"height": "10px",
-		"left": "0px",
-		"right": "0px"
-	},
-	"nw": {
-		"position": "absolute",
-		"width": "10px",
-		"height": "10px",
-		"z-index": 1,
-		"top": "-5px",
-		"left": "-5px",
-		"bottom": "auto",
-		"right": "auto"
-	},
-	"ne": {
-		"position": "absolute",
-		"width": "10px",
-		"height": "10px",
-		"z-index": 1,
-		"top": "-5px",
-		"right": "-5px",
-		"bottom": "auto",
-		"left": "auto"
-	},
-	"sw": {
-		"position": "absolute",
-		"width": "10px",
-		"height": "10px",
-		"z-index": 1,
-		"bottom": "-5px",
-		"left": "-5px",
-		"top": "auto",
-		"right": "auto"
-	},
-	"se": {
-		"position": "absolute",
-		"width": "10px",
-		"height": "10px",
-		"z-index": 1,
-		"bottom": "-5px",
-		"right": "-5px",
-		"top": "auto",
-		"left": "auto"
-	}
-}
-
-function clamp(value, min, max) {
-	return Math.max(min, Math.min(value, max));
-}
-
-export default Resizable
+export { DIRECTIONS }

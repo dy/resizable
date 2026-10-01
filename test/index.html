@@ -1,19 +1,47 @@
 <!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A tiny, delightful element resizer for the web.">
+  <title>resizable — a tiny element resizer</title>
+  <link rel="stylesheet" href="./index.css">
+</head>
+<body>
+  <main>
+    <nav><a class="brand" href="#">resizable<span>.</span></a><a href="https://github.com/dy/resizable">GitHub ↗</a></nav>
+    <section class="hero">
+      <div class="eyebrow"><i></i> 3.0 · zero dependencies</div>
+      <h1>Make anything<br><em>fit just right.</em></h1>
+      <p>A tiny, modern element resizer. Pointer-friendly, keyboard-accessible, and less than a coffee break to learn.</p>
+      <div class="install"><code><span>$</span> npm install resizable</code><button aria-label="Copy install command">Copy</button></div>
+    </section>
 
-<meta charset="utf-8">
+    <section class="playground" aria-labelledby="try-title">
+      <div class="playground-head"><div><span>PLAYGROUND</span><h2 id="try-title">Give it a pull.</h2></div><p>Drag an edge or corner.<br>Drag the card to move it.</p></div>
+      <div class="stage" id="stage">
+        <div class="card" id="card">
+          <div class="card-top"><span class="avatar">R</span><span class="status">LIVE</span></div>
+          <div class="card-copy"><small>DIMENSIONS</small><strong id="dimensions">360 × 240</strong><p>The simple things should feel this good.</p></div>
+        </div>
+        <div class="hint">↘&nbsp;&nbsp; grab a corner</div>
+      </div>
+    </section>
 
-<link rel="stylesheet" type="text/css" href="./index.css">
+    <section class="features">
+      <article><b>01</b><h3>No baggage</h3><p>One focused ESM file. No CSS and no runtime dependencies.</p></article>
+      <article><b>02</b><h3>Feels native</h3><p>Pointer events for mouse, pen, and touch. Arrow keys included.</p></article>
+      <article><b>03</b><h3>Plays nicely</h3><p>Constraints, aspect ratios, custom handles, and bubbling events.</p></article>
+    </section>
 
+    <section class="code"><div><span>THAT'S REALLY IT</span><h2>Four lines<br>to freedom.</h2></div><pre><code><i>import</i> Resizable <i>from</i> <q>'resizable'</q>
 
-<script type="importmap">
-	{
-		"imports": {
-			"resizable": "../resizable.min.js",
-			"tst": "https://cdn.jsdelivr.net/npm/tst/tst.js",
-			"hyperf": "https://cdn.jsdelivr.net/npm/hyperf/hyperf.min.js",
-			"draggy": "https://cdn.jsdelivr.net/npm/draggy/draggy.min.js"
-		}
-	}
-</script>
-
-<script src="index.js" type="module"></script>
+<i>new</i> Resizable(card, {
+  handles: <q>'e, s, se'</q>,
+  within: <q>'parent'</q>
+})</code></pre></section>
+  </main>
+  <footer><a class="brand" href="#">resizable<span>.</span></a><p>Small on purpose. MIT licensed.</p></footer>
+  <script type="module" src="./index.js"></script>
+</body>
+</html>
